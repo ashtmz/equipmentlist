@@ -206,6 +206,28 @@ button {
   font-weight: 700;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero-corner-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hero-corner-actions .mini-button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  border-radius: 12px;
+}
+
 .panel {
   padding: 22px;
   border: 1px solid rgba(255, 255, 255, 0.65);
@@ -311,13 +333,6 @@ button {
   grid-template-columns: minmax(0, 1.6fr) auto;
   gap: 12px;
   margin-bottom: 16px;
-}
-
-.toolbar-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
 }
 
 .search-wrap,
@@ -1298,14 +1313,6 @@ button {
     width: 100%;
   }
 
-  .toolbar-actions {
-    justify-content: stretch;
-  }
-
-  .toolbar-actions > * {
-    flex: 1 1 auto;
-  }
-
   .tab-button {
     min-height: 72px;
   }
@@ -1316,6 +1323,14 @@ button {
 
   .card-actions {
     align-items: stretch;
+  }
+
+  .hero-corner-actions {
+    width: 100%;
+  }
+
+  .hero-corner-actions .mini-button {
+    flex: 1 1 auto;
   }
 
   .card-actions .action-cluster {

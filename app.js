@@ -1324,11 +1324,7 @@ function renderList() {
           <label class="sr-only" for="search-text">検索</label>
           <input id="search-text" class="text-input" type="text" value="${escapeHTML(state.searchText)}" placeholder="メーカー・機材名・メモ・所有で検索" />
         </div>
-        <div class="toolbar-actions">
-          <button class="ghost-button" data-action="export-data">書き出し</button>
-          <button class="secondary-button" data-action="import-data">読み込み</button>
-          <button class="primary-button" data-action="open-add-modal">機材を追加</button>
-        </div>
+        <button class="primary-button" data-action="open-add-modal">機材を追加</button>
       </div>
 
       <input id="import-data-file" type="file" accept="application/json,.json" hidden />
@@ -1990,6 +1986,10 @@ function render() {
         </div>
       </div>
       <div class="hero-actions">
+        <div class="hero-corner-actions">
+          <button class="mini-button" data-action="export-data">書き出し</button>
+          <button class="mini-button" data-action="import-data">読み込み</button>
+        </div>
         ${selectedCount > 0 ? `
           <button class="floating-button" data-action="set-tab" data-tab="selected">
             選定中
