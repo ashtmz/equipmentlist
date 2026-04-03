@@ -849,17 +849,30 @@ function returnEquipment(historyId) {
   render();
 }
 
-function deleteHistoryItem(historyId) {
-  const item = state.history.find((entry) => entry.id === historyId);
-  if (!item) {
+function returnHistoryGroup(historyIds) {
+  const ids = String(historyIds || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (ids.length === 0) {
     return;
   }
 
-  if (!window.confirm("この履歴を削除しますか？")) {
+  const idSet = new Set(ids);
+  let changed = false;
+  state.history.forEach((entry) => {
+    if (idSet.has(entry.id) && !entry.returned) {
+      entry.returned = true;
+      entry.returnDate = today();
+      changed = true;
+    }
+  });
+
+  if (!changed) {
     return;
   }
 
-  state.history = state.history.filter((entry) => entry.id !== historyId);
   persistState();
   render();
 }
@@ -1622,38 +1635,40 @@ function renderHistory() {
           const allReturned = items.every((item) => item.returned);
           const groupHistoryIds = items.map((item) => item.id).join(",");
           return `
-            <article class="history-card ${allReturned ? "done" : "active"}">
-              <header class="history-header">
-                <div class="history-title">
-                  <span class="history-dot" style="background:${allReturned ? "#16a34a" : "#f59e0b"};"></span>
-                  ${projectName ? badge(projectName, "badge-gray") : ""}
-                  <strong>${escapeHTML(person)}</strong>
-                  <span>${escapeHTML(destination)}</span>
-                  ${badge(allReturned ? "返却済み" : "持ち出し中", allReturned ? "badge-green" : "badge-amber")}
-                </div>
-                <div class="history-header-actions">
-                  <span>${escapeHTML(formatDateRange(startDate, endDate))}</span>
-                  <button class="mini-button mini-button-danger" data-action="delete-history-group" data-history-ids="${escapeHTML(groupHistoryIds)}">まとめて削除</button>
-                </div>
-              </header>
-              <div class="history-body">
-                ${items.map((item) => `
-                  <div class="history-item">
-                    <div class="history-meta">
-                      ${equipmentHeading(getEquipment(item.equipId), true)}
-                      ${badge(`×${item.qty}`, "badge-gray")}
-                      <span class="allocation-line">所有: ${escapeHTML(formatAllocationSummary(item.allocations))}</span>
-                    </div>
-                    <div class="history-item-actions">
-                      ${item.returned
-                        ? `<span class="returned-tag">返却 ${escapeHTML(item.returnDate || "-")}</span>`
-                        : `<button class="mini-button" data-action="return-equipment" data-history-id="${escapeHTML(item.id)}">返却する</button>`}
-                      <button class="mini-button mini-button-danger" data-action="delete-history-item" data-history-id="${escapeHTML(item.id)}">削除</button>
-                    </div>
+            <div class="history-card-wrap">
+              <button class="history-delete-outside" data-action="delete-history-group" data-history-ids="${escapeHTML(groupHistoryIds)}" aria-label="この現場の履歴を削除">×</button>
+              <article class="history-card ${allReturned ? "done" : "active"}">
+                <header class="history-header">
+                  <div class="history-title">
+                    <span class="history-dot" style="background:${allReturned ? "#16a34a" : "#f59e0b"};"></span>
+                    ${projectName ? badge(projectName, "badge-gray") : ""}
+                    <strong>${escapeHTML(person)}</strong>
+                    <span>${escapeHTML(destination)}</span>
+                    ${badge(allReturned ? "返却済み" : "持ち出し中", allReturned ? "badge-green" : "badge-amber")}
                   </div>
-                `).join("")}
-              </div>
-            </article>
+                  <div class="history-header-actions">
+                    <span>${escapeHTML(formatDateRange(startDate, endDate))}</span>
+                    ${allReturned ? "" : `<button class="mini-button" data-action="return-history-group" data-history-ids="${escapeHTML(groupHistoryIds)}">まとめて返却</button>`}
+                  </div>
+                </header>
+                <div class="history-body">
+                  ${items.map((item) => `
+                    <div class="history-item">
+                      <div class="history-meta">
+                        ${equipmentHeading(getEquipment(item.equipId), true)}
+                        ${badge(`×${item.qty}`, "badge-gray")}
+                        <span class="allocation-line">所有: ${escapeHTML(formatAllocationSummary(item.allocations))}</span>
+                      </div>
+                      <div class="history-item-actions">
+                        ${item.returned
+                          ? `<span class="returned-tag">返却 ${escapeHTML(item.returnDate || "-")}</span>`
+                          : `<button class="mini-button" data-action="return-equipment" data-history-id="${escapeHTML(item.id)}">返却する</button>`}
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              </article>
+            </div>
           `;
         }).join("")}
       </div>
@@ -2142,8 +2157,8 @@ app.addEventListener("click", (event) => {
     case "return-equipment":
       returnEquipment(target.dataset.historyId);
       return;
-    case "delete-history-item":
-      deleteHistoryItem(target.dataset.historyId);
+    case "return-history-group":
+      returnHistoryGroup(target.dataset.historyIds);
       return;
     case "delete-history-group":
       deleteHistoryGroup(target.dataset.historyIds);

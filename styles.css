@@ -883,11 +883,33 @@ button {
   gap: 14px;
 }
 
+.history-card-wrap {
+  position: relative;
+  padding-right: 20px;
+}
+
 .history-card {
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.6);
+}
+
+.history-delete-outside {
+  position: absolute;
+  top: -10px;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  background: rgba(254, 226, 226, 0.92);
+  color: var(--danger);
+  font-size: 0.95rem;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.12);
 }
 
 .history-card.active {
