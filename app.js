@@ -265,6 +265,98 @@ function persistState() {
   localStorage.setItem(STORAGE_KEYS.nextId, JSON.stringify(state.nextId));
 }
 
+function buildExportPayload() {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    equipment: state.equipment,
+    history: state.history,
+    nextId: state.nextId,
+  };
+}
+
+function downloadTextFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
+function exportAppData() {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const payload = buildExportPayload();
+  downloadTextFile(`equipment-export-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json");
+}
+
+function parseImportedData(rawText) {
+  const parsed = JSON.parse(rawText);
+
+  if (Array.isArray(parsed)) {
+    return {
+      equipment: parsed.map(normalizeEquipment),
+      history: [],
+      nextId: parsed.reduce((max, item, index) => Math.max(max, toPositiveInt(item?.id, index + 1)), 0) + 1,
+    };
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("JSONの形式を認識できませんでした。");
+  }
+
+  if (!Array.isArray(parsed.equipment)) {
+    throw new Error("機材データが見つかりませんでした。");
+  }
+
+  const equipment = parsed.equipment.map(normalizeEquipment);
+  const history = normalizeHistory(parsed.history, equipment);
+  const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
+
+  return {
+    equipment,
+    history,
+    nextId: Math.max(toPositiveInt(parsed.nextId, maxId + 1), maxId + 1),
+  };
+}
+
+async function importAppData(file) {
+  if (!file) {
+    return;
+  }
+
+  if (!window.confirm("現在の公開側データを、このファイルの内容で置き換えます。よろしいですか？")) {
+    return;
+  }
+
+  try {
+    const rawText = await file.text();
+    const imported = parseImportedData(rawText);
+    state.equipment = imported.equipment;
+    state.history = imported.history;
+    state.nextId = imported.nextId;
+    state.selectionProjects = [];
+    state.activeSelectionProjectId = null;
+    state.searchText = "";
+    state.filterManufacturer = "";
+    state.filterGenre = "";
+    state.filterType = "";
+    state.filterOwnership = "";
+    persistState();
+    render();
+    window.alert(`${state.equipment.length} 件の機材データを読み込みました。`);
+  } catch (error) {
+    window.alert("読み込みに失敗しました。JSONファイルの内容を確認してください。");
+  }
+}
+
+function openImportPicker() {
+  document.getElementById("import-data-file")?.click();
+}
+
 function getEquipment(id) {
   return state.equipment.find((item) => item.id === Number(id));
 }
@@ -1232,8 +1324,14 @@ function renderList() {
           <label class="sr-only" for="search-text">検索</label>
           <input id="search-text" class="text-input" type="text" value="${escapeHTML(state.searchText)}" placeholder="メーカー・機材名・メモ・所有で検索" />
         </div>
-        <button class="primary-button" data-action="open-add-modal">機材を追加</button>
+        <div class="toolbar-actions">
+          <button class="ghost-button" data-action="export-data">書き出し</button>
+          <button class="secondary-button" data-action="import-data">読み込み</button>
+          <button class="primary-button" data-action="open-add-modal">機材を追加</button>
+        </div>
       </div>
+
+      <input id="import-data-file" type="file" accept="application/json,.json" hidden />
 
       ${renderEquipmentFilterPanel(manufacturerOptions, genreOptions, typeOptions, ownershipNames)}
 
@@ -1955,6 +2053,12 @@ app.addEventListener("click", (event) => {
       state.showAddModal = true;
       render();
       return;
+    case "export-data":
+      exportAppData();
+      return;
+    case "import-data":
+      openImportPicker();
+      return;
     case "open-edit-modal":
       openEditModal(target.dataset.equipId);
       return;
@@ -2108,6 +2212,13 @@ app.addEventListener("change", (event) => {
       render();
     }).catch(() => {
       window.alert("説明書ファイルの読み込みに失敗しました。");
+    });
+    return;
+  }
+
+  if (event.target.id === "import-data-file" && event.target.files?.[0]) {
+    importAppData(event.target.files[0]).finally(() => {
+      event.target.value = "";
     });
     return;
   }
