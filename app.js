@@ -205,7 +205,7 @@ function getSyncStatusLabel() {
     return "共有保存先へ接続中";
   }
   if (state.sync.pendingRemote) {
-    return "他ユーザーの更新あり";
+    return state.sync.localRevision ? "共有反映待ち" : "他ユーザーの更新あり";
   }
   if (state.sync.lastSyncedAt) {
     return `共有同期済み ${formatSyncStamp(state.sync.lastSyncedAt)}`;
@@ -353,6 +353,7 @@ const state = {
     error: "",
     lastSyncedAt: "",
     revision: "",
+    localRevision: "",
     pendingRemote: false,
   },
 };
@@ -362,6 +363,10 @@ let remotePollTimer = null;
 let remoteSaveTimer = null;
 let remoteSaveInFlight = false;
 let remoteSaveQueued = false;
+
+function createClientRevision() {
+  return `client-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 function writeLocalCache() {
   localStorage.setItem(STORAGE_KEYS.equipment, JSON.stringify(state.equipment));
@@ -376,7 +381,15 @@ function serializeSharedState() {
     history: state.history,
     nextId: state.nextId,
     selectionProjects: state.selectionProjects,
+    _meta: {
+      clientRevision: state.sync.localRevision || "",
+      savedAt: new Date().toISOString(),
+    },
   };
+}
+
+function getRemoteClientRevision(rawState) {
+  return String(rawState?._meta?.clientRevision || "").trim();
 }
 
 function applySharedState(rawState) {
@@ -495,6 +508,10 @@ async function refreshRemoteState(options = {}) {
       state.sync.loading = false;
       state.sync.error = "";
       if (!state.sync.revision && (state.equipment.length > 0 || state.history.length > 0 || state.selectionProjects.length > 0)) {
+        if (!state.sync.localRevision) {
+          state.sync.localRevision = createClientRevision();
+        }
+        state.sync.pendingRemote = true;
         scheduleRemoteSync(true);
       } else {
         render();
@@ -503,7 +520,14 @@ async function refreshRemoteState(options = {}) {
     }
 
     const revision = String(response.revision || "");
+    const remoteClientRevision = getRemoteClientRevision(response.state);
     if (!options.force && revision && revision === state.sync.revision) {
+      state.sync.loading = false;
+      state.sync.error = "";
+      return false;
+    }
+
+    if (state.sync.pendingRemote && state.sync.localRevision && remoteClientRevision !== state.sync.localRevision) {
       state.sync.loading = false;
       state.sync.error = "";
       return false;
@@ -515,6 +539,7 @@ async function refreshRemoteState(options = {}) {
     state.sync.pendingRemote = false;
     state.sync.revision = revision;
     state.sync.lastSyncedAt = String(response.updatedAt || revision || "");
+    state.sync.localRevision = remoteClientRevision || state.sync.localRevision || "";
     render();
     return true;
   } catch (error) {
@@ -551,7 +576,9 @@ async function flushRemoteSync() {
   try {
     await postRemoteSharedState(serializeSharedState());
     state.sync.saving = false;
-    await refreshRemoteState({ silent: true, force: true });
+    window.setTimeout(() => {
+      refreshRemoteState({ silent: true });
+    }, 1200);
     render();
   } catch (error) {
     state.sync.saving = false;
@@ -580,6 +607,8 @@ function startRemotePolling() {
 function persistState(options = {}) {
   writeLocalCache();
   if (options.remote !== false) {
+    state.sync.localRevision = createClientRevision();
+    state.sync.pendingRemote = true;
     scheduleRemoteSync();
   }
 }

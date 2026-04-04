@@ -118,6 +118,7 @@ function writeState_(state) {
     history: Array.isArray(state?.history) ? state.history : [],
     nextId: Number(state?.nextId || 1),
     selectionProjects: Array.isArray(state?.selectionProjects) ? state.selectionProjects : [],
+    _meta: state?._meta && typeof state._meta === "object" ? state._meta : {},
   });
   const chunks = chunkString_(serialized, CHUNK_SIZE);
 
