@@ -2,6 +2,7 @@ const STORAGE_KEYS = {
   equipment: "equipment-manager-equipment",
   history: "equipment-manager-history",
   nextId: "equipment-manager-next-id",
+  selectionProjects: "equipment-manager-selection-projects",
 };
 
 const INITIAL_EQUIPMENT = [
@@ -29,6 +30,18 @@ function loadJSON(key, fallback) {
 function toPositiveInt(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+const APP_CONFIG = window.APP_CONFIG ?? {};
+const SHARED_STORE_CONFIG = APP_CONFIG.sharedStore ?? {};
+const REMOTE_STORE = {
+  mode: String(SHARED_STORE_CONFIG.mode || "").trim(),
+  webAppUrl: String(SHARED_STORE_CONFIG.webAppUrl || "").trim(),
+  pollMs: Math.max(3000, toPositiveInt(SHARED_STORE_CONFIG.pollMs, 8000)),
+};
+
+function isRemoteStoreEnabled() {
+  return REMOTE_STORE.mode === "apps-script" && Boolean(REMOTE_STORE.webAppUrl);
 }
 
 function mergeOwnerships(ownerships) {
@@ -169,6 +182,50 @@ function formatDateRange(startDate, endDate) {
   return `${start} - ${end}`;
 }
 
+function formatSyncStamp(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function getSyncStatusLabel() {
+  if (!state.sync.configured) {
+    return "ローカル保存";
+  }
+  if (state.sync.error) {
+    return state.sync.error;
+  }
+  if (state.sync.saving) {
+    return "共有保存中";
+  }
+  if (state.sync.loading) {
+    return "共有保存先へ接続中";
+  }
+  if (state.sync.pendingRemote) {
+    return "他ユーザーの更新あり";
+  }
+  if (state.sync.lastSyncedAt) {
+    return `共有同期済み ${formatSyncStamp(state.sync.lastSyncedAt)}`;
+  }
+  return "共有保存有効";
+}
+
+function getSyncStatusClass() {
+  if (!state.sync.configured) {
+    return "sync-status-local";
+  }
+  if (state.sync.error) {
+    return "sync-status-error";
+  }
+  if (state.sync.saving || state.sync.loading) {
+    return "sync-status-busy";
+  }
+  return "sync-status-ok";
+}
+
 function escapeHTML(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -233,16 +290,50 @@ function createAddForm(seed = {}) {
   };
 }
 
-const storedEquipment = loadJSON(STORAGE_KEYS.equipment, INITIAL_EQUIPMENT);
-const normalizedEquipment = (Array.isArray(storedEquipment) ? storedEquipment : INITIAL_EQUIPMENT).map(normalizeEquipment);
+function normalizeSelectionProjects(rawProjects, equipment) {
+  const validEquipIds = new Set((equipment || []).map((item) => item.id));
+
+  return (Array.isArray(rawProjects) ? rawProjects : []).map((project, index) => {
+    const items = (Array.isArray(project?.items) ? project.items : [])
+      .map((item, itemIndex) => ({
+        id: String(item?.id ?? `selection-${Date.now()}-${index}-${itemIndex}`),
+        equipId: toPositiveInt(item?.equipId, 0),
+        qty: Math.max(1, toPositiveInt(item?.qty, 1)),
+      }))
+      .filter((item) => item.equipId > 0 && (validEquipIds.size === 0 || validEquipIds.has(item.equipId)));
+
+    return {
+      id: String(project?.id ?? `project-${Date.now()}-${index}`),
+      name: String(project?.name ?? "").trim() || `現場${index + 1}`,
+      items,
+    };
+  });
+}
+
+function loadCachedSharedState() {
+  const storedEquipment = loadJSON(STORAGE_KEYS.equipment, INITIAL_EQUIPMENT);
+  const equipment = (Array.isArray(storedEquipment) ? storedEquipment : INITIAL_EQUIPMENT).map(normalizeEquipment);
+  const history = normalizeHistory(loadJSON(STORAGE_KEYS.history, []), equipment);
+  const selectionProjects = normalizeSelectionProjects(loadJSON(STORAGE_KEYS.selectionProjects, []), equipment);
+  const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
+
+  return {
+    equipment,
+    history,
+    selectionProjects,
+    nextId: Math.max(toPositiveInt(loadJSON(STORAGE_KEYS.nextId, maxId + 1), maxId + 1), maxId + 1),
+  };
+}
+
+const cachedSharedState = loadCachedSharedState();
 
 const state = {
   tab: "list",
-  equipment: normalizedEquipment,
-  history: normalizeHistory(loadJSON(STORAGE_KEYS.history, []), normalizedEquipment),
-  nextId: toPositiveInt(loadJSON(STORAGE_KEYS.nextId, 11), normalizedEquipment.length + 1),
-  selectionProjects: [],
-  activeSelectionProjectId: null,
+  equipment: cachedSharedState.equipment,
+  history: cachedSharedState.history,
+  nextId: cachedSharedState.nextId,
+  selectionProjects: cachedSharedState.selectionProjects,
+  activeSelectionProjectId: cachedSharedState.selectionProjects[0]?.id ?? null,
   showAddModal: false,
   editingEquipmentId: null,
   showCheckoutModal: false,
@@ -255,14 +346,242 @@ const state = {
   addForm: createAddForm(),
   checkoutForm: null,
   checkoutProjectId: null,
+  sync: {
+    configured: isRemoteStoreEnabled(),
+    loading: isRemoteStoreEnabled(),
+    saving: false,
+    error: "",
+    lastSyncedAt: "",
+    revision: "",
+    pendingRemote: false,
+  },
 };
 
 const app = document.getElementById("app");
+let remotePollTimer = null;
+let remoteSaveTimer = null;
+let remoteSaveInFlight = false;
+let remoteSaveQueued = false;
 
-function persistState() {
+function writeLocalCache() {
   localStorage.setItem(STORAGE_KEYS.equipment, JSON.stringify(state.equipment));
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(state.history));
   localStorage.setItem(STORAGE_KEYS.nextId, JSON.stringify(state.nextId));
+  localStorage.setItem(STORAGE_KEYS.selectionProjects, JSON.stringify(state.selectionProjects));
+}
+
+function serializeSharedState() {
+  return {
+    equipment: state.equipment,
+    history: state.history,
+    nextId: state.nextId,
+    selectionProjects: state.selectionProjects,
+  };
+}
+
+function applySharedState(rawState) {
+  const equipment = (Array.isArray(rawState?.equipment) ? rawState.equipment : INITIAL_EQUIPMENT).map(normalizeEquipment);
+  const history = normalizeHistory(rawState?.history, equipment);
+  const selectionProjects = normalizeSelectionProjects(rawState?.selectionProjects, equipment);
+  const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
+
+  state.equipment = equipment;
+  state.history = history;
+  state.nextId = Math.max(toPositiveInt(rawState?.nextId, maxId + 1), maxId + 1);
+  state.selectionProjects = selectionProjects;
+
+  if (!getSelectionProject(state.activeSelectionProjectId)) {
+    state.activeSelectionProjectId = selectionProjects[0]?.id ?? null;
+  }
+
+  if (state.checkoutProjectId && !getSelectionProject(state.checkoutProjectId)) {
+    state.checkoutProjectId = null;
+    state.checkoutForm = null;
+    state.showCheckoutModal = false;
+  }
+
+  writeLocalCache();
+}
+
+function canApplyRemoteStateImmediately() {
+  return !state.showAddModal && !state.showCheckoutModal;
+}
+
+function buildJSONPUrl(params = {}) {
+  const url = new URL(REMOTE_STORE.webAppUrl);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  });
+  return url.toString();
+}
+
+function fetchRemoteStateJSONP() {
+  return new Promise((resolve, reject) => {
+    const callbackName = `__equipmentSyncCallback_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const script = document.createElement("script");
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Remote request timed out"));
+    }, 15000);
+
+    function cleanup() {
+      window.clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = (payload) => {
+      cleanup();
+      resolve(payload);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Remote script load failed"));
+    };
+
+    script.src = buildJSONPUrl({
+      action: "getState",
+      callback: callbackName,
+      _: Date.now(),
+    });
+    document.head.appendChild(script);
+  });
+}
+
+async function postRemoteSharedState(snapshot) {
+  const body = new URLSearchParams({
+    action: "putState",
+    payload: JSON.stringify(snapshot),
+  });
+
+  await fetch(REMOTE_STORE.webAppUrl, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+    },
+    body,
+  });
+}
+
+async function refreshRemoteState(options = {}) {
+  if (!isRemoteStoreEnabled()) {
+    return false;
+  }
+
+  if (!canApplyRemoteStateImmediately() && !options.force) {
+    state.sync.pendingRemote = true;
+    if (!options.silent) {
+      render();
+    }
+    return false;
+  }
+
+  try {
+    if (!options.silent) {
+      state.sync.loading = true;
+      render();
+    }
+
+    const response = await fetchRemoteStateJSONP();
+    if (!response?.ok) {
+      throw new Error(response?.error || "Remote state load failed");
+    }
+
+    if (!response.hasState) {
+      state.sync.loading = false;
+      state.sync.error = "";
+      if (!state.sync.revision && (state.equipment.length > 0 || state.history.length > 0 || state.selectionProjects.length > 0)) {
+        scheduleRemoteSync(true);
+      } else {
+        render();
+      }
+      return false;
+    }
+
+    const revision = String(response.revision || "");
+    if (!options.force && revision && revision === state.sync.revision) {
+      state.sync.loading = false;
+      state.sync.error = "";
+      return false;
+    }
+
+    applySharedState(response.state);
+    state.sync.loading = false;
+    state.sync.error = "";
+    state.sync.pendingRemote = false;
+    state.sync.revision = revision;
+    state.sync.lastSyncedAt = String(response.updatedAt || revision || "");
+    render();
+    return true;
+  } catch (error) {
+    state.sync.loading = false;
+    state.sync.error = "共有保存先と同期できません";
+    render();
+    return false;
+  }
+}
+
+function scheduleRemoteSync(immediate = false) {
+  if (!isRemoteStoreEnabled()) {
+    return;
+  }
+
+  remoteSaveQueued = true;
+  window.clearTimeout(remoteSaveTimer);
+  remoteSaveTimer = window.setTimeout(() => {
+    flushRemoteSync();
+  }, immediate ? 0 : 500);
+}
+
+async function flushRemoteSync() {
+  if (!isRemoteStoreEnabled() || remoteSaveInFlight || !remoteSaveQueued) {
+    return;
+  }
+
+  remoteSaveQueued = false;
+  remoteSaveInFlight = true;
+  state.sync.saving = true;
+  state.sync.error = "";
+  render();
+
+  try {
+    await postRemoteSharedState(serializeSharedState());
+    state.sync.saving = false;
+    await refreshRemoteState({ silent: true, force: true });
+    render();
+  } catch (error) {
+    state.sync.saving = false;
+    state.sync.error = "共有保存に失敗しました";
+    render();
+  } finally {
+    remoteSaveInFlight = false;
+    if (remoteSaveQueued) {
+      flushRemoteSync();
+    }
+  }
+}
+
+function startRemotePolling() {
+  if (!isRemoteStoreEnabled() || remotePollTimer) {
+    return;
+  }
+
+  remotePollTimer = window.setInterval(() => {
+    if (!remoteSaveInFlight) {
+      refreshRemoteState({ silent: true });
+    }
+  }, REMOTE_STORE.pollMs);
+}
+
+function persistState(options = {}) {
+  writeLocalCache();
+  if (options.remote !== false) {
+    scheduleRemoteSync();
+  }
 }
 
 function buildExportPayload() {
@@ -272,6 +591,7 @@ function buildExportPayload() {
     equipment: state.equipment,
     history: state.history,
     nextId: state.nextId,
+    selectionProjects: state.selectionProjects,
   };
 }
 
@@ -297,10 +617,12 @@ function parseImportedData(rawText) {
   const parsed = JSON.parse(rawText);
 
   if (Array.isArray(parsed)) {
+    const equipment = parsed.map(normalizeEquipment);
     return {
-      equipment: parsed.map(normalizeEquipment),
+      equipment,
       history: [],
       nextId: parsed.reduce((max, item, index) => Math.max(max, toPositiveInt(item?.id, index + 1)), 0) + 1,
+      selectionProjects: [],
     };
   }
 
@@ -314,12 +636,14 @@ function parseImportedData(rawText) {
 
   const equipment = parsed.equipment.map(normalizeEquipment);
   const history = normalizeHistory(parsed.history, equipment);
+  const selectionProjects = normalizeSelectionProjects(parsed.selectionProjects, equipment);
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
 
   return {
     equipment,
     history,
     nextId: Math.max(toPositiveInt(parsed.nextId, maxId + 1), maxId + 1),
+    selectionProjects,
   };
 }
 
@@ -338,8 +662,8 @@ async function importAppData(file) {
     state.equipment = imported.equipment;
     state.history = imported.history;
     state.nextId = imported.nextId;
-    state.selectionProjects = [];
-    state.activeSelectionProjectId = null;
+    state.selectionProjects = imported.selectionProjects;
+    state.activeSelectionProjectId = imported.selectionProjects[0]?.id ?? null;
     state.searchText = "";
     state.filterManufacturer = "";
     state.filterGenre = "";
@@ -486,6 +810,7 @@ function createSelectionProjectFromPrompt() {
   state.selectionProjects.push(project);
   state.activeSelectionProjectId = project.id;
   state.tab = "selected";
+  persistState();
   render();
 }
 
@@ -508,6 +833,7 @@ function deleteSelectionProject(projectId) {
     state.checkoutForm = null;
     state.checkoutProjectId = null;
   }
+  persistState();
   render();
 }
 
@@ -724,6 +1050,7 @@ function addSelection(equipId) {
     project.items.push({ id: `selection-${Date.now()}-${id}`, equipId: id, qty: 1 });
   }
 
+  persistState();
   render();
 }
 
@@ -741,6 +1068,7 @@ function removeSelectionUnit(equipId) {
     item.qty -= 1;
   }
 
+  persistState();
   render();
 }
 
@@ -751,6 +1079,7 @@ function removeSelectionAll(equipId) {
     return;
   }
   project.items = project.items.filter((selection) => selection.equipId !== id);
+  persistState();
   render();
 }
 
@@ -1998,6 +2327,7 @@ function render() {
       <div class="hero-title-wrap">
         <div>
           <h1>機材管理ボード</h1>
+          <p class="sync-status ${getSyncStatusClass()}">${escapeHTML(getSyncStatusLabel())}</p>
         </div>
       </div>
       <div class="hero-actions">
@@ -2091,6 +2421,9 @@ app.addEventListener("click", (event) => {
       state.editingEquipmentId = null;
       state.addForm = createAddForm();
       render();
+      if (state.sync.pendingRemote) {
+        refreshRemoteState({ silent: true, force: true });
+      }
       return;
     case "add-ownership-row":
       addOwnershipRow();
@@ -2138,6 +2471,9 @@ app.addEventListener("click", (event) => {
       state.checkoutForm = null;
       state.checkoutProjectId = null;
       render();
+      if (state.sync.pendingRemote) {
+        refreshRemoteState({ silent: true, force: true });
+      }
       return;
     case "confirm-checkout":
       checkoutFromForm();
@@ -2260,5 +2596,17 @@ app.addEventListener("change", (event) => {
   }
 });
 
-persistState();
+window.addEventListener("focus", () => {
+  if (isRemoteStoreEnabled()) {
+    refreshRemoteState({ silent: true });
+  }
+});
+
+writeLocalCache();
 render();
+
+if (isRemoteStoreEnabled()) {
+  refreshRemoteState({ force: true }).finally(() => {
+    startRemotePolling();
+  });
+}

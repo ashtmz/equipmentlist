@@ -131,6 +131,28 @@ button {
   font-size: 0.96rem;
 }
 
+.sync-status {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sync-status-local {
+  color: var(--text-muted);
+}
+
+.sync-status-ok {
+  color: var(--brand-strong);
+}
+
+.sync-status-busy {
+  color: #b45309;
+}
+
+.sync-status-error {
+  color: var(--danger);
+}
+
 .floating-button,
 .primary-button,
 .secondary-button,
