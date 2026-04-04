@@ -37,6 +37,10 @@ body {
   font-family: "Avenir Next", "Hiragino Sans", "Yu Gothic", sans-serif;
 }
 
+.modal-open {
+  overflow: hidden;
+}
+
 button,
 input,
 select {
@@ -1023,6 +1027,8 @@ button {
   align-items: center;
   justify-content: center;
   padding: 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal.open {
@@ -1041,6 +1047,7 @@ button {
   width: min(760px, 100%);
   max-height: calc(100vh - 36px);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 22px;
   border-radius: var(--radius-xl);
   background: rgba(255, 252, 247, 0.98);

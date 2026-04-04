@@ -138,28 +138,56 @@ function normalizeAllocations(rawAllocations, fallbackOwnerships, qty) {
   return result.filter((entry) => entry.qty > 0);
 }
 
+function splitHistoryEntryByAllocation(item, fallbackOwnerships, index) {
+  const qty = toPositiveInt(item?.qty, 0);
+  const allocations = normalizeAllocations(item?.allocations, fallbackOwnerships, qty);
+  const baseEntry = {
+    equipId: toPositiveInt(item?.equipId, 0),
+    projectName: String(item?.projectName ?? "").trim(),
+    person: String(item?.person ?? "").trim(),
+    destination: String(item?.destination ?? "").trim(),
+    startDate: String(item?.startDate ?? "").trim(),
+    endDate: String(item?.endDate ?? "").trim(),
+    date: String(item?.date ?? "").trim(),
+    returned: Boolean(item?.returned),
+    returnDate: item?.returnDate ? String(item.returnDate) : null,
+  };
+  const baseId = String(item?.id ?? `history-${Date.now()}-${index}`);
+
+  if (allocations.length <= 1) {
+    const allocation = allocations[0] ?? { ownerName: fallbackOwnerships[0]?.name || "未設定", qty };
+    return [{
+      id: baseId,
+      ...baseEntry,
+      qty: allocation.qty,
+      allocations: [allocation],
+    }];
+  }
+
+  return allocations.map((allocation, allocationIndex) => ({
+    id: `${baseId}-${allocationIndex}`,
+    ...baseEntry,
+    qty: allocation.qty,
+    allocations: [allocation],
+  }));
+}
+
 function normalizeHistory(rawHistory, equipment) {
-  return (Array.isArray(rawHistory) ? rawHistory : []).map((item, index) => {
+  return (Array.isArray(rawHistory) ? rawHistory : []).flatMap((item, index) => {
     const equipId = toPositiveInt(item?.equipId, 0);
     const qty = toPositiveInt(item?.qty, 0);
     const linkedEquipment = equipment.find((entry) => entry.id === equipId);
     const fallbackOwnerships = linkedEquipment?.ownerships ?? [{ name: "未設定", qty }];
     const fallbackDate = String(item?.date ?? today()).trim();
 
-    return {
-      id: String(item?.id ?? `history-${Date.now()}-${index}`),
+    return splitHistoryEntryByAllocation({
+      ...item,
       equipId,
       qty,
-      projectName: String(item?.projectName ?? "").trim(),
-      person: String(item?.person ?? "").trim(),
-      destination: String(item?.destination ?? "").trim(),
       startDate: String(item?.startDate ?? fallbackDate).trim(),
       endDate: String(item?.endDate ?? fallbackDate).trim(),
       date: fallbackDate,
-      returned: Boolean(item?.returned),
-      returnDate: item?.returnDate ? String(item.returnDate) : null,
-      allocations: normalizeAllocations(item?.allocations, fallbackOwnerships, qty),
-    };
+    }, fallbackOwnerships, index);
   });
 }
 
@@ -337,6 +365,7 @@ const state = {
   showAddModal: false,
   editingEquipmentId: null,
   showCheckoutModal: false,
+  returnModal: null,
   mediaViewer: null,
   searchText: "",
   filterManufacturer: "",
@@ -413,11 +442,16 @@ function applySharedState(rawState) {
     state.showCheckoutModal = false;
   }
 
+  if (state.returnModal) {
+    const remainingIds = state.returnModal.historyIds.filter((id) => state.history.some((entry) => entry.id === id && !entry.returned));
+    state.returnModal = remainingIds.length > 0 ? { historyIds: remainingIds } : null;
+  }
+
   writeLocalCache();
 }
 
 function canApplyRemoteStateImmediately() {
-  return !state.showAddModal && !state.showCheckoutModal;
+  return !state.showAddModal && !state.showCheckoutModal && !state.returnModal;
 }
 
 function buildJSONPUrl(params = {}) {
@@ -1180,6 +1214,32 @@ function closeMediaViewer() {
   render();
 }
 
+function openReturnModal(historyIds) {
+  const ids = Array.isArray(historyIds)
+    ? historyIds
+    : String(historyIds || "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  const activeIds = ids.filter((id) => state.history.some((entry) => entry.id === id && !entry.returned));
+
+  if (activeIds.length === 0) {
+    return;
+  }
+
+  state.returnModal = { historyIds: activeIds };
+  render();
+}
+
+function closeReturnModal() {
+  if (!state.returnModal) {
+    return;
+  }
+
+  state.returnModal = null;
+  render();
+}
+
 function clearAttachment(kind) {
   syncAddFormFromDOM();
   if (kind === "image") {
@@ -1233,6 +1293,21 @@ function returnHistoryGroup(historyIds) {
 
   persistState();
   render();
+}
+
+function confirmReturnModal() {
+  const ids = state.returnModal?.historyIds ?? [];
+  if (ids.length === 0) {
+    closeReturnModal();
+    return;
+  }
+
+  if (ids.length === 1) {
+    returnEquipment(ids[0]);
+    return;
+  }
+
+  returnHistoryGroup(ids.join(","));
 }
 
 function deleteHistoryGroup(historyIds) {
@@ -1606,16 +1681,17 @@ function checkoutFromForm() {
     return;
   }
 
-  const entries = project.items.map((selection, index) => {
+  const stamp = Date.now();
+  const entries = project.items.flatMap((selection, index) => {
     const allocationMap = form.allocations[selection.equipId] ?? {};
     const allocations = Object.entries(allocationMap)
       .map(([ownerName, qty]) => ({ ownerName, qty: toPositiveInt(qty, 0) }))
       .filter((entry) => entry.qty > 0);
 
-    return {
-      id: `history-${Date.now()}-${index}-${selection.equipId}`,
+    return allocations.map((allocation, allocationIndex) => ({
+      id: `history-${stamp}-${index}-${selection.equipId}-${allocationIndex}`,
       equipId: selection.equipId,
-      qty: selection.qty,
+      qty: allocation.qty,
       projectName: project.name,
       person: form.person,
       destination: form.destination,
@@ -1624,8 +1700,8 @@ function checkoutFromForm() {
       date: form.startDate,
       returned: false,
       returnDate: null,
-      allocations,
-    };
+      allocations: [allocation],
+    }));
   });
 
   state.history = [...entries, ...state.history];
@@ -2347,8 +2423,60 @@ function renderCheckoutModal() {
   `;
 }
 
+function renderReturnModal() {
+  if (!state.returnModal) {
+    return "";
+  }
+
+  const items = state.returnModal.historyIds
+    .map((historyId) => state.history.find((entry) => entry.id === historyId && !entry.returned))
+    .filter(Boolean);
+
+  if (items.length === 0) {
+    state.returnModal = null;
+    return "";
+  }
+
+  const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
+
+  return `
+    <div class="modal open">
+      <div class="modal-backdrop" data-action="close-return-modal"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="return-modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="return-modal-title">返却確認</h2>
+            <p>${items.length} 件 / 合計 ${totalQty} 点を返却済みにします。</p>
+          </div>
+          <button class="modal-close" data-action="close-return-modal" aria-label="閉じる">×</button>
+        </div>
+
+        <div class="checkout-summary">
+          <strong>返却対象</strong>
+          ${items.map((item) => `
+            <div class="checkout-item">
+              <div>
+                ${equipmentHeading(getEquipment(item.equipId), true)}
+                <div class="sub-note">所有: ${escapeHTML(formatAllocationSummary(item.allocations))}</div>
+              </div>
+              <span>×${item.qty}</span>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="modal-actions">
+          <button class="ghost-button" data-action="close-return-modal">キャンセル</button>
+          <button class="secondary-button" data-action="confirm-return-modal">返却を確定</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function render() {
-  const activeCheckoutCount = state.history.filter((item) => !item.returned).length;
+  const activeCheckoutCount = state.history
+    .filter((item) => !item.returned)
+    .reduce((sum, item) => sum + item.qty, 0);
   const selectedCount = getTotalSelectionQty();
 
   app.innerHTML = `
@@ -2395,8 +2523,13 @@ function render() {
     ${state.tab === "history" ? renderHistory() : ""}
     ${renderAddModal()}
     ${renderCheckoutModal()}
+    ${renderReturnModal()}
     ${renderMediaViewer()}
   `;
+
+  const hasOpenModal = state.showAddModal || state.showCheckoutModal || Boolean(state.returnModal) || Boolean(state.mediaViewer);
+  document.documentElement.classList.toggle("modal-open", hasOpenModal);
+  document.body.classList.toggle("modal-open", hasOpenModal);
 }
 
 app.addEventListener("click", (event) => {
@@ -2444,6 +2577,9 @@ app.addEventListener("click", (event) => {
       return;
     case "close-media-viewer":
       closeMediaViewer();
+      return;
+    case "close-return-modal":
+      closeReturnModal();
       return;
     case "close-add-modal":
       state.showAddModal = false;
@@ -2507,6 +2643,9 @@ app.addEventListener("click", (event) => {
     case "confirm-checkout":
       checkoutFromForm();
       return;
+    case "confirm-return-modal":
+      confirmReturnModal();
+      return;
     case "add-selection":
       addSelection(target.dataset.equipId);
       return;
@@ -2520,10 +2659,10 @@ app.addEventListener("click", (event) => {
       deleteEquipment(target.dataset.equipId);
       return;
     case "return-equipment":
-      returnEquipment(target.dataset.historyId);
+      openReturnModal(target.dataset.historyId);
       return;
     case "return-history-group":
-      returnHistoryGroup(target.dataset.historyIds);
+      openReturnModal(target.dataset.historyIds);
       return;
     case "delete-history-group":
       deleteHistoryGroup(target.dataset.historyIds);
