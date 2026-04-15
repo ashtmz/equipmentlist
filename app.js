@@ -1483,9 +1483,12 @@ function createEstimateProject(name = "") {
 }
 
 function openProjectModal(type) {
-  const normalizedType = type === "estimate" ? "estimate" : "selection";
-  state.projectModalType = normalizedType;
-  state.projectModalName = normalizedType === "estimate"
+  if (type !== "estimate" && type !== "selection") {
+    return;
+  }
+
+  state.projectModalType = type;
+  state.projectModalName = type === "estimate"
     ? getNextEstimateProjectName()
     : getNextSelectionProjectName();
   state.showProjectModal = true;
@@ -3922,7 +3925,7 @@ function renderProjectModal() {
   const isEstimate = state.projectModalType === "estimate";
   const projectLabel = isEstimate ? "見積もり" : "現場";
   const title = isEstimate ? "見積もりを作成" : "現場を作成";
-  const description = `モバイルでも使いやすい入力欄から${projectLabel}名を登録できます。`;
+  const description = `モバイル画面でも入力しやすいフォームで${projectLabel}名を登録できます。`;
   const label = `${projectLabel}名`;
   const placeholder = isEstimate ? "例: 学園祭PA見積もり" : "例: 学園祭メインステージ";
   const confirmLabel = isEstimate ? "見積もりを作成" : "現場を作成";
