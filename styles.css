@@ -84,19 +84,19 @@ button {
   position: relative;
   z-index: 1;
   width: min(1320px, calc(100% - 24px));
-  margin: 24px auto 40px;
+  margin: 18px auto 32px;
 }
 
 .hero {
   position: sticky;
-  top: 18px;
+  top: 14px;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 22px;
-  margin-bottom: 18px;
+  padding: 14px 20px;
+  margin-bottom: 14px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-xl);
   background: rgba(255, 252, 247, 0.88);
@@ -115,13 +115,13 @@ button {
 .hero-mark {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   background: linear-gradient(135deg, var(--brand), #14b8a6);
   color: #fff;
-  font-size: 26px;
-  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.26);
+  font-size: 22px;
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.22);
 }
 
 .hero h1 {
@@ -186,13 +186,13 @@ button {
 .primary-button {
   background: linear-gradient(135deg, var(--brand), #0d9488);
   color: #fff;
-  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.22);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.2);
 }
 
 .secondary-button {
-  background: linear-gradient(135deg, var(--accent), #f59e0b);
+  background: linear-gradient(135deg, #0d9488, var(--brand-strong));
   color: #fff;
-  box-shadow: 0 14px 30px rgba(217, 119, 6, 0.2);
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.2);
 }
 
 .ghost-button {
@@ -255,7 +255,7 @@ button {
 }
 
 .panel {
-  padding: 22px;
+  padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: var(--radius-xl);
   background: var(--panel);
@@ -266,40 +266,40 @@ button {
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .tab-button {
   position: relative;
   display: flex;
-  flex: 1 1 220px;
+  flex: 1 1 180px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 4px;
-  min-height: 84px;
-  padding: 16px 20px;
-  border-radius: 26px;
+  gap: 2px;
+  min-height: 58px;
+  padding: 10px 16px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.54);
   color: var(--text-muted);
   border: 1px solid var(--line);
 }
 
 .tab-title {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text);
 }
 
 .tab-caption {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .tab-button.active {
   color: #fff;
-  background: linear-gradient(135deg, #1f2937, #334155);
-  box-shadow: 0 14px 30px rgba(31, 41, 55, 0.18);
+  background: linear-gradient(135deg, var(--brand), #0d9488);
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
 }
 
 .tab-button.active .tab-title,
@@ -309,15 +309,15 @@ button {
 
 .badge-counter {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 10px;
+  right: 12px;
   display: inline-grid;
   place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
   background: rgba(15, 118, 110, 0.14);
   color: var(--brand-strong);
@@ -331,34 +331,34 @@ button {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .stat-card {
-  padding: 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-lg);
   background: var(--panel-strong);
   border: 1px solid var(--line);
 }
 
 .stat-label {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   color: var(--text-muted);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
 }
 
 .stat-value {
   margin: 0;
-  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-size: clamp(1.4rem, 2.5vw, 1.75rem);
   font-weight: 700;
 }
 
 .toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) auto;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .search-wrap,
@@ -409,9 +409,9 @@ button {
 .filter-panel {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.52);
   border: 1px solid var(--line);
@@ -423,7 +423,7 @@ button {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: var(--text-muted);
   font-size: 0.92rem;
 }
@@ -656,18 +656,18 @@ button {
 .inventory-grid,
 .selection-grid {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .inventory-card,
 .selection-card {
   display: grid;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 10px 14px;
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(59, 61, 64, 0.26);
+  border: 1px solid rgba(59, 61, 64, 0.22);
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
   overflow: hidden;
 }
 
@@ -772,10 +772,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   padding-top: 4px;
-  border-top: 1px solid rgba(59, 61, 64, 0.14);
+  border-top: 1px solid rgba(59, 61, 64, 0.1);
 }
 
 .empty-state {
@@ -827,7 +827,7 @@ button {
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .section-head h2,
@@ -902,7 +902,7 @@ button {
   min-height: 48px;
   padding: 0 20px;
   font-weight: 700;
-  box-shadow: 0 18px 34px rgba(217, 119, 6, 0.28);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.2);
 }
 
 .selection-project-summary {
@@ -1039,7 +1039,7 @@ button {
 
 .history-list {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .history-card-wrap {
@@ -1087,7 +1087,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(59, 61, 64, 0.08);
 }
 
@@ -1503,7 +1503,7 @@ button {
   }
 
   .tab-button {
-    min-height: 72px;
+    min-height: 52px;
   }
 
   .inventory-card-bottom {
