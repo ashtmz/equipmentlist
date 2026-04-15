@@ -3279,8 +3279,7 @@ function renderSelected() {
       <section class="panel">
         <div class="section-head">
           <div>
-            <h2>現場ごとの選定</h2>
-            <p>現場を切り替えながら、必要な機材をそれぞれ集められます。</p>
+            <h2>選定</h2>
           </div>
         <button class="primary-button" data-action="create-selection-project">現場を追加</button>
       </div>
@@ -3315,7 +3314,6 @@ function renderSelected() {
         <div class="section-head">
           <div>
             <h2>${escapeHTML(project.name)}</h2>
-            <p>一覧と同じフィルターで絞って、この現場に機材を追加できます。</p>
           </div>
           <div class="selection-workspace-actions">
             <span class="selection-project-summary">${projectTotals.itemCount} 種類 / ${projectTotals.qty} 点</span>
@@ -3952,7 +3950,6 @@ function renderEstimates() {
       <div class="section-head">
         <div>
           <h2>見積もり</h2>
-          <p>必要機材、セット、追加費用を含めて金額を組み立てます。</p>
         </div>
         <button class="primary-button" data-action="create-estimate-project">見積もりを追加</button>
       </div>
@@ -3986,7 +3983,6 @@ function renderEstimates() {
           <div class="section-head">
             <div>
               <h2>${escapeHTML(project.name)}</h2>
-              <p>この見積もりに必要機材、セット、追加費用を登録します。</p>
             </div>
             <div class="selection-workspace-actions">
               <span class="selection-project-summary">機材 ${projectTotals.qty} 点 / セット ${projectTotals.packQty} 件 / 追加費用 ${projectTotals.extraCount} 件</span>
@@ -3999,7 +3995,6 @@ function renderEstimates() {
             <div class="section-head">
               <div>
                 <h2>セット</h2>
-                <p>見積もりの中で使うセット商品です。</p>
               </div>
               <div class="section-head-actions">
                 <button class="mini-button" data-action="toggle-estimate-section" data-section="packages">${packagesOpen ? "畳む" : "開く"}</button>
@@ -4059,7 +4054,6 @@ function renderEstimates() {
             <div class="section-head">
               <div>
                 <h2>追加費用</h2>
-                <p>あらかじめ登録した費用項目を、この見積もりへ呼び出して使います。</p>
               </div>
               <div class="section-head-actions">
                 <button class="mini-button" data-action="toggle-estimate-section" data-section="extras">${extrasOpen ? "畳む" : "開く"}</button>
