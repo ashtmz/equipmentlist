@@ -1525,6 +1525,12 @@ function confirmProjectModal() {
   render();
 }
 
+function refreshRemoteStateIfPending() {
+  if (state.sync.pendingRemote) {
+    refreshRemoteState({ silent: true, force: true });
+  }
+}
+
 function ensureActiveSelectionProject() {
   const active = getActiveSelectionProject();
   if (active) {
@@ -3914,11 +3920,10 @@ function renderProjectModal() {
   }
 
   const isEstimate = state.projectModalType === "estimate";
+  const projectLabel = isEstimate ? "見積もり" : "現場";
   const title = isEstimate ? "見積もりを作成" : "現場を作成";
-  const description = isEstimate
-    ? "モバイルでも使いやすい入力欄から見積もり名を登録できます。"
-    : "モバイルでも使いやすい入力欄から現場名を登録できます。";
-  const label = isEstimate ? "見積もり名" : "現場名";
+  const description = `モバイルでも使いやすい入力欄から${projectLabel}名を登録できます。`;
+  const label = `${projectLabel}名`;
   const placeholder = isEstimate ? "例: 学園祭PA見積もり" : "例: 学園祭メインステージ";
   const confirmLabel = isEstimate ? "見積もりを作成" : "現場を作成";
 
@@ -4611,15 +4616,11 @@ app.addEventListener("click", (event) => {
       state.editingExtraFeeTemplateId = null;
       state.extraFeeForm = createExtraFeeForm();
       render();
-      if (state.sync.pendingRemote) {
-        refreshRemoteState({ silent: true, force: true });
-      }
+      refreshRemoteStateIfPending();
       return;
     case "close-project-modal":
       closeProjectModal();
-      if (state.sync.pendingRemote) {
-        refreshRemoteState({ silent: true, force: true });
-      }
+      refreshRemoteStateIfPending();
       return;
     case "toggle-estimate-section":
       if (target.dataset.section && Object.prototype.hasOwnProperty.call(state.estimateSectionOpen, target.dataset.section)) {
@@ -4672,18 +4673,14 @@ app.addEventListener("click", (event) => {
       state.editingEquipmentId = null;
       state.addForm = createAddForm();
       render();
-      if (state.sync.pendingRemote) {
-        refreshRemoteState({ silent: true, force: true });
-      }
+      refreshRemoteStateIfPending();
       return;
     case "close-pack-modal":
       state.showPackModal = false;
       state.editingPackId = null;
       state.packForm = createPackForm();
       render();
-      if (state.sync.pendingRemote) {
-        refreshRemoteState({ silent: true, force: true });
-      }
+      refreshRemoteStateIfPending();
       return;
     case "add-ownership-row":
       addOwnershipRow();
@@ -4749,9 +4746,7 @@ app.addEventListener("click", (event) => {
       state.checkoutForm = null;
       state.checkoutProjectId = null;
       render();
-      if (state.sync.pendingRemote) {
-        refreshRemoteState({ silent: true, force: true });
-      }
+      refreshRemoteStateIfPending();
       return;
     case "confirm-checkout":
       checkoutFromForm();
