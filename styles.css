@@ -649,6 +649,10 @@ button {
   text-align: center;
 }
 
+.selected-qty.is-zero {
+  color: var(--text-muted);
+}
+
 .inventory-grid,
 .selection-grid {
   display: grid;
@@ -661,8 +665,9 @@ button {
   gap: 10px;
   padding: 14px 16px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(59, 61, 64, 0.26);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
   overflow: hidden;
 }
 
@@ -770,7 +775,7 @@ button {
   gap: 12px;
   flex-wrap: wrap;
   padding-top: 4px;
-  border-top: 1px solid rgba(59, 61, 64, 0.08);
+  border-top: 1px solid rgba(59, 61, 64, 0.14);
 }
 
 .empty-state {
@@ -852,8 +857,9 @@ button {
   align-items: center;
   padding: 12px;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(59, 61, 64, 0.24);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
 }
 
 .project-card.active {
@@ -885,6 +891,20 @@ button {
   flex-wrap: wrap;
 }
 
+.section-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.price-calc-button {
+  min-height: 48px;
+  padding: 0 20px;
+  font-weight: 700;
+  box-shadow: 0 18px 34px rgba(217, 119, 6, 0.28);
+}
+
 .selection-project-summary {
   display: inline-flex;
   align-items: center;
@@ -894,6 +914,119 @@ button {
   background: rgba(15, 118, 110, 0.08);
   color: var(--brand-strong);
   font-weight: 700;
+}
+
+.pack-grid {
+  margin-top: 16px;
+}
+
+.estimate-subsection {
+  margin-bottom: 18px;
+}
+
+.estimate-panel-packages {
+  border-color: rgba(15, 118, 110, 0.22);
+  background: rgba(240, 253, 250, 0.82);
+}
+
+.estimate-panel-extras {
+  border-color: rgba(217, 119, 6, 0.24);
+  background: rgba(255, 247, 237, 0.86);
+}
+
+.estimate-collapsed-note {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(59, 61, 64, 0.14);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.pack-card {
+  border-color: rgba(15, 118, 110, 0.24);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.extra-template-card {
+  border-color: rgba(217, 119, 6, 0.26);
+  background: rgba(255, 252, 247, 0.92);
+}
+
+.pack-card,
+.extra-template-card {
+  gap: 8px;
+  padding: 11px 12px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+}
+
+.pack-card .inventory-card-top,
+.extra-template-card .inventory-card-top {
+  gap: 10px;
+}
+
+.pack-card .inventory-card-main,
+.extra-template-card .inventory-card-main {
+  gap: 6px;
+}
+
+.pack-card .inventory-inline-groups,
+.extra-template-card .inventory-inline-groups {
+  gap: 6px 12px;
+}
+
+.pack-card .inventory-card-bottom,
+.extra-template-card .inventory-card-bottom {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.pack-card .note-text,
+.extra-template-card .note-text {
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.pack-card .card-actions,
+.extra-template-card .card-actions {
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.extra-fee-grid {
+  margin-bottom: 18px;
+}
+
+.estimate-selected-list {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(217, 119, 6, 0.2);
+}
+
+.estimate-selected-head {
+  margin-bottom: 12px;
+}
+
+.estimate-selected-head h3,
+.estimate-selected-head p {
+  margin: 0;
+}
+
+.estimate-selected-head p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.estimate-selected-extra-card {
+  border-color: rgba(217, 119, 6, 0.22);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.dep-rule-fields-pack-form {
+  grid-template-columns: 1.6fr 0.6fr;
 }
 
 .selection-picker-grid {
@@ -917,8 +1050,9 @@ button {
 .history-card {
   border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(59, 61, 64, 0.24);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
 .history-delete-outside {
@@ -1264,6 +1398,10 @@ button {
   margin-top: 18px;
 }
 
+.modal-actions .danger-button:first-child {
+  margin-right: auto;
+}
+
 .media-modal-card {
   width: min(920px, 100%);
 }
@@ -1397,5 +1535,248 @@ button {
 
   .project-card {
     grid-template-columns: 1fr;
+  }
+}
+
+/* --- Price display --- */
+.price-value {
+  font-weight: 600;
+  color: var(--brand-strong);
+}
+
+.inventory-price {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Dependency warnings --- */
+.dependency-warnings {
+  background: var(--warning-soft);
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.dependency-warnings-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.dependency-warnings-icon {
+  font-size: 1.2rem;
+}
+
+.dependency-warning-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.88rem;
+  flex-wrap: wrap;
+}
+
+.dependency-warning-item + .dependency-warning-item {
+  border-top: 1px solid rgba(180, 83, 9, 0.15);
+}
+
+.dependency-warning-required {
+  font-weight: 600;
+}
+
+.dependency-warning-desc {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.badge-red {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* --- Dependency modal --- */
+.modal-card-wide {
+  max-width: 820px;
+}
+
+.dependency-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dependency-rule-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+}
+
+.dep-rule-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto 1fr auto;
+  gap: 10px;
+  flex: 1;
+  align-items: end;
+}
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.dep-rule-actions {
+  margin-top: 14px;
+}
+
+.dependency-editor-inline {
+  width: 100%;
+}
+
+.add-form-dependency-row {
+  align-items: stretch;
+}
+
+.dep-rule-fields-add-form {
+  grid-template-columns: 1.2fr minmax(160px, 0.8fr) 1.2fr auto;
+}
+
+.field-checkbox-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  white-space: normal;
+}
+
+.field-checkbox-stack label + label {
+  margin-top: 6px;
+}
+
+/* --- Price calculation modal --- */
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin-bottom: 20px;
+}
+
+.price-table th,
+.price-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.price-table th {
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.price-col {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.price-subtotal-row td {
+  border-top: 2px solid var(--line);
+  padding-top: 12px;
+}
+
+.price-adjustment-row.discount td {
+  color: var(--success);
+}
+
+.price-adjustment-row.surcharge td {
+  color: var(--danger);
+}
+
+.price-total-row td {
+  border-top: 2px solid var(--text);
+  padding-top: 12px;
+}
+
+.price-total-value {
+  font-size: 1.2rem;
+  color: var(--brand-strong);
+}
+
+.price-adjustments-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.price-adjustments-section h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.price-adj-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.price-adj-row .select {
+  min-width: 140px;
+}
+
+.price-adj-row .number-input {
+  width: 100px;
+}
+
+.price-adj-row .text-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+@media (max-width: 700px) {
+  .dep-rule-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .dep-rule-fields-add-form {
+    grid-template-columns: 1fr;
+  }
+
+  .dep-rule-fields-pack-form {
+    grid-template-columns: 1fr;
+  }
+
+  .dependency-rule-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .price-adj-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .price-adj-row .select,
+  .price-adj-row .number-input,
+  .price-adj-row .text-input {
+    width: 100%;
+    min-width: unset;
   }
 }

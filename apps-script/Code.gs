@@ -115,9 +115,13 @@ function writeState_(state) {
   const revision = new Date().toISOString();
   const serialized = JSON.stringify({
     equipment: Array.isArray(state?.equipment) ? state.equipment : [],
+    packs: Array.isArray(state?.packs) ? state.packs : [],
+    extraFeeTemplates: Array.isArray(state?.extraFeeTemplates) ? state.extraFeeTemplates : [],
     history: Array.isArray(state?.history) ? state.history : [],
     nextId: Number(state?.nextId || 1),
+    estimateProjects: Array.isArray(state?.estimateProjects) ? state.estimateProjects : [],
     selectionProjects: Array.isArray(state?.selectionProjects) ? state.selectionProjects : [],
+    dependencyRules: Array.isArray(state?.dependencyRules) ? state.dependencyRules : [],
     _meta: state?._meta && typeof state._meta === "object" ? state._meta : {},
   });
   const chunks = chunkString_(serialized, CHUNK_SIZE);

@@ -3,20 +3,26 @@ const STORAGE_KEYS = {
   history: "equipment-manager-history",
   nextId: "equipment-manager-next-id",
   selectionProjects: "equipment-manager-selection-projects",
+  dependencyRules: "equipment-manager-dependency-rules",
+  packs: "equipment-manager-packs",
+  estimateProjects: "equipment-manager-estimate-projects",
+  extraFeeTemplates: "equipment-manager-extra-fee-templates",
 };
 
-const INITIAL_EQUIPMENT = [
-  { id: 1, manufacturer: "SHURE", name: "SM58", genre: "マイク", types: ["ボーカル"], stock: 8, notes: "定番ダイナミックマイク", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 8 }] },
-  { id: 2, manufacturer: "SENNHEISER", name: "e935", genre: "マイク", types: ["ボーカル"], stock: 4, notes: "", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 4 }] },
-  { id: 3, manufacturer: "DPA", name: "4099", genre: "マイク", types: ["楽器収音"], stock: 6, notes: "クリップ式コンデンサー", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 6 }] },
-  { id: 4, manufacturer: "YAMAHA", name: "CL5", genre: "ミキサー", types: ["PA"], stock: 1, notes: "デジタルコンソール", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 1 }] },
-  { id: 5, manufacturer: "QSC", name: "K12.2", genre: "スピーカー", types: ["PA"], stock: 4, notes: "パワードスピーカー", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 4 }] },
-  { id: 6, manufacturer: "ETC", name: "Ion Xe", genre: "調光卓", types: ["照明"], stock: 1, notes: "", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "照明部", qty: 1 }] },
-  { id: 7, manufacturer: "ETC", name: "Source Four", genre: "灯体", types: ["照明"], stock: 12, notes: "750W エリスポ", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "照明部", qty: 12 }] },
-  { id: 8, manufacturer: "Blackmagic Design", name: "ATEM Mini Extreme", genre: "スイッチャー", types: ["映像", "配信"], stock: 2, notes: "配信用", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "映像部", qty: 2 }] },
-  { id: 9, manufacturer: "Canon", name: "XA75", genre: "カメラ", types: ["映像"], stock: 3, notes: "業務用カムコーダー", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "映像部", qty: 3 }] },
-  { id: 10, manufacturer: "Sennheiser", name: "EW-D", genre: "ワイヤレス", types: ["PA"], stock: 6, notes: "デジタルワイヤレスシステム", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 6 }] },
+const LEGACY_SAMPLE_EQUIPMENT = [
+  { id: 1, manufacturer: "SHURE", name: "SM58", genre: "マイク", types: ["ボーカル"], stock: 8, price: 0, notes: "定番ダイナミックマイク", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 8 }] },
+  { id: 2, manufacturer: "SENNHEISER", name: "e935", genre: "マイク", types: ["ボーカル"], stock: 4, price: 0, notes: "", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 4 }] },
+  { id: 3, manufacturer: "DPA", name: "4099", genre: "マイク", types: ["楽器収音"], stock: 6, price: 0, notes: "クリップ式コンデンサー", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 6 }] },
+  { id: 4, manufacturer: "YAMAHA", name: "CL5", genre: "ミキサー", types: ["PA"], stock: 1, price: 0, notes: "デジタルコンソール", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 1 }] },
+  { id: 5, manufacturer: "QSC", name: "K12.2", genre: "スピーカー", types: ["PA"], stock: 4, price: 0, notes: "パワードスピーカー", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 4 }] },
+  { id: 6, manufacturer: "ETC", name: "Ion Xe", genre: "調光卓", types: ["照明"], stock: 1, price: 0, notes: "", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "照明部", qty: 1 }] },
+  { id: 7, manufacturer: "ETC", name: "Source Four", genre: "灯体", types: ["照明"], stock: 12, price: 0, notes: "750W エリスポ", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "照明部", qty: 12 }] },
+  { id: 8, manufacturer: "Blackmagic Design", name: "ATEM Mini Extreme", genre: "スイッチャー", types: ["映像", "配信"], stock: 2, price: 0, notes: "配信用", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "映像部", qty: 2 }] },
+  { id: 9, manufacturer: "Canon", name: "XA75", genre: "カメラ", types: ["映像"], stock: 3, price: 0, notes: "業務用カムコーダー", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "映像部", qty: 3 }] },
+  { id: 10, manufacturer: "Sennheiser", name: "EW-D", genre: "ワイヤレス", types: ["PA"], stock: 6, price: 0, notes: "デジタルワイヤレスシステム", imageUrl: "", imageFileData: "", imageFileName: "", manualUrl: "", manualFileData: "", manualFileName: "", ownerships: [{ name: "音響部", qty: 6 }] },
 ];
+
+const INITIAL_EQUIPMENT = [];
 
 function loadJSON(key, fallback) {
   try {
@@ -96,6 +102,7 @@ function normalizeEquipment(item, index) {
     genre: genres[0] || "",
     types,
     stock,
+    price: toPositiveInt(item?.price, 0),
     notes: String(item?.notes ?? "").trim(),
     imageUrl: String(item?.imageUrl ?? "").trim(),
     imageFileData: String(item?.imageFileData ?? "").trim(),
@@ -105,6 +112,182 @@ function normalizeEquipment(item, index) {
     manualFileName: String(item?.manualFileName ?? "").trim(),
     ownerships,
   };
+}
+
+function buildEquipmentSignature(equipment) {
+  return (Array.isArray(equipment) ? equipment : [])
+    .map((item) => {
+      const ownershipSignature = (item.ownerships || [])
+        .map((entry) => `${String(entry.name || "").trim()}:${toPositiveInt(entry.qty, 0)}`)
+        .sort()
+        .join(",");
+      return [
+        toPositiveInt(item.id, 0),
+        String(item.manufacturer || "").trim(),
+        String(item.name || "").trim(),
+        toPositiveInt(item.stock, 0),
+        ownershipSignature,
+      ].join("|");
+    })
+    .sort()
+    .join("||");
+}
+
+const LEGACY_SAMPLE_SIGNATURE = buildEquipmentSignature(LEGACY_SAMPLE_EQUIPMENT.map(normalizeEquipment));
+const LEGACY_SAMPLE_KEY_SET = new Set(
+  LEGACY_SAMPLE_EQUIPMENT
+    .map((item, index) => normalizeEquipment(item, index))
+    .map((item) => `${item.id}|${String(item.manufacturer || "").trim()}|${String(item.name || "").trim()}`)
+);
+
+function getLegacySampleKey(item) {
+  return `${toPositiveInt(item?.id, 0)}|${String(item?.manufacturer || "").trim()}|${String(item?.name || "").trim()}`;
+}
+
+function purgeLegacySampleEquipmentFromSnapshot(snapshot) {
+  if (!snapshot) {
+    return { snapshot, stripped: false };
+  }
+
+  const equipment = Array.isArray(snapshot.equipment) ? snapshot.equipment : [];
+  const removedIds = new Set(
+    equipment
+      .filter((item) => LEGACY_SAMPLE_KEY_SET.has(getLegacySampleKey(item)))
+      .map((item) => toPositiveInt(item.id, 0))
+      .filter((id) => id > 0)
+  );
+
+  if (removedIds.size === 0) {
+    return { snapshot, stripped: false };
+  }
+
+  const nextEquipment = equipment.filter((item) => !removedIds.has(toPositiveInt(item.id, 0)));
+  const nextPacks = (Array.isArray(snapshot.packs) ? snapshot.packs : []).map((pack) => ({
+    ...pack,
+    items: (Array.isArray(pack.items) ? pack.items : []).filter((entry) => !removedIds.has(toPositiveInt(entry.equipId, 0))),
+  }));
+  const nextHistory = (Array.isArray(snapshot.history) ? snapshot.history : []).filter((entry) => !removedIds.has(toPositiveInt(entry.equipId, 0)));
+  const nextEstimateProjects = (Array.isArray(snapshot.estimateProjects) ? snapshot.estimateProjects : []).map((project) => ({
+    ...project,
+    items: (Array.isArray(project.items) ? project.items : []).filter((entry) => !removedIds.has(toPositiveInt(entry.equipId, 0))),
+  }));
+  const nextSelectionProjects = (Array.isArray(snapshot.selectionProjects) ? snapshot.selectionProjects : []).map((project) => ({
+    ...project,
+    items: (Array.isArray(project.items) ? project.items : []).filter((entry) => !removedIds.has(toPositiveInt(entry.equipId, 0))),
+  }));
+  const nextDependencyRules = (Array.isArray(snapshot.dependencyRules) ? snapshot.dependencyRules : []).filter((rule) => (
+    !removedIds.has(toPositiveInt(rule.sourceEquipId, 0)) && !removedIds.has(toPositiveInt(rule.targetEquipId, 0))
+  ));
+  const maxId = nextEquipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
+
+  return {
+    stripped: true,
+    snapshot: {
+      ...snapshot,
+      equipment: nextEquipment,
+      packs: nextPacks,
+      history: nextHistory,
+      estimateProjects: nextEstimateProjects,
+      selectionProjects: nextSelectionProjects,
+      dependencyRules: nextDependencyRules,
+      nextId: nextEquipment.length === 0
+        ? 1
+        : Math.max(toPositiveInt(snapshot.nextId, maxId + 1), maxId + 1),
+    },
+  };
+}
+
+function shouldStripLegacySampleState(snapshot) {
+  if (!snapshot) {
+    return false;
+  }
+
+  const equipment = Array.isArray(snapshot.equipment) ? snapshot.equipment : [];
+  if (equipment.length === 0) {
+    return false;
+  }
+
+  return (
+    buildEquipmentSignature(equipment) === LEGACY_SAMPLE_SIGNATURE
+    && (snapshot.packs || []).length === 0
+    && (snapshot.extraFeeTemplates || []).length === 0
+    && (snapshot.history || []).length === 0
+    && (snapshot.estimateProjects || []).length === 0
+    && (snapshot.selectionProjects || []).length === 0
+    && (snapshot.dependencyRules || []).length === 0
+  );
+}
+
+function stripLegacySampleState(snapshot) {
+  const purgedSnapshot = purgeLegacySampleEquipmentFromSnapshot(snapshot);
+  if (purgedSnapshot.stripped) {
+    return purgedSnapshot;
+  }
+
+  if (!shouldStripLegacySampleState(snapshot)) {
+    return { snapshot, stripped: false };
+  }
+
+  return {
+    stripped: true,
+    snapshot: {
+      ...snapshot,
+      equipment: [],
+      nextId: 1,
+    },
+  };
+}
+
+function getSnapshotContentCount(snapshot) {
+  if (!snapshot) {
+    return 0;
+  }
+
+  return (
+    (snapshot.equipment || []).length
+    + (snapshot.packs || []).length
+    + (snapshot.extraFeeTemplates || []).length
+    + (snapshot.history || []).length
+    + (snapshot.estimateProjects || []).length
+    + (snapshot.selectionProjects || []).length
+    + (snapshot.dependencyRules || []).length
+  );
+}
+
+function getCurrentStateSnapshot() {
+  return {
+    equipment: state.equipment,
+    packs: state.packs,
+    extraFeeTemplates: state.extraFeeTemplates,
+    history: state.history,
+    estimateProjects: state.estimateProjects,
+    selectionProjects: state.selectionProjects,
+    dependencyRules: state.dependencyRules,
+    nextId: state.nextId,
+  };
+}
+
+function shouldPreferLocalSnapshot(remoteSnapshot) {
+  const normalizedRemote = stripLegacySampleState(remoteSnapshot).snapshot;
+  const normalizedLocal = stripLegacySampleState(getCurrentStateSnapshot()).snapshot;
+  const remoteContentCount = getSnapshotContentCount(normalizedRemote);
+  const localContentCount = getSnapshotContentCount(normalizedLocal);
+  const remoteHadLegacySamples = purgeLegacySampleEquipmentFromSnapshot(remoteSnapshot).stripped;
+  const localHadLegacySamples = purgeLegacySampleEquipmentFromSnapshot(getCurrentStateSnapshot()).stripped;
+
+  if (localContentCount === 0) {
+    return false;
+  }
+
+  if (remoteContentCount === 0) {
+    return true;
+  }
+
+  if (remoteHadLegacySamples && !localHadLegacySamples) {
+    return true;
+  }
+
+  return false;
 }
 
 function normalizeAllocations(rawAllocations, fallbackOwnerships, qty) {
@@ -288,6 +471,141 @@ function createOwnershipRow(name = "", qty = 0) {
   return { id: `ownership-${Date.now()}-${Math.random().toString(16).slice(2)}`, name, qty };
 }
 
+function createDependencyRuleDraft(seed = {}) {
+  return {
+    id: String(seed.id ?? `dep-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    targetEquipId: toPositiveInt(seed.targetEquipId, 0),
+    sourcePerTarget: Math.max(1, toPositiveInt(seed.sourcePerTarget, 1)),
+    description: String(seed.description ?? "").trim(),
+    required: Boolean(seed.required),
+  };
+}
+
+function createPriceAdjustment(seed = {}) {
+  return {
+    id: String(seed.id ?? `adj-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    scope: String(seed.scope ?? "project"),
+    type: String(seed.type ?? "discount-pct"),
+    value: toPositiveInt(seed.value, 0),
+    label: String(seed.label ?? "").trim(),
+  };
+}
+
+function createPackItemRow(seed = {}) {
+  return {
+    id: String(seed.id ?? `pack-item-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    equipId: toPositiveInt(seed.equipId, 0),
+    qty: Math.max(1, toPositiveInt(seed.qty, 1)),
+  };
+}
+
+function createPackForm(seed = {}) {
+  return {
+    name: String(seed.name ?? "").trim(),
+    price: toPositiveInt(seed.price, 0),
+    notes: String(seed.notes ?? "").trim(),
+    items: Array.isArray(seed.items) && seed.items.length > 0
+      ? seed.items.map((entry) => createPackItemRow(entry))
+      : [createPackItemRow()],
+  };
+}
+
+function createEstimateExtraItem(seed = {}) {
+  return {
+    id: String(seed.id ?? `estimate-extra-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    extraFeeId: String(seed.extraFeeId ?? "").trim(),
+    name: String(seed.name ?? "").trim(),
+    category: String(seed.category ?? "その他").trim() || "その他",
+    unitPrice: toPositiveInt(seed.unitPrice, 0),
+    qty: Math.max(1, toPositiveInt(seed.qty, 1)),
+    notes: String(seed.notes ?? "").trim(),
+  };
+}
+
+function createExtraFeeTemplate(seed = {}) {
+  return {
+    id: String(seed.id ?? `extra-fee-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    name: String(seed.name ?? "").trim(),
+    category: String(seed.category ?? "その他").trim() || "その他",
+    unitPrice: toPositiveInt(seed.unitPrice, 0),
+    notes: String(seed.notes ?? "").trim(),
+  };
+}
+
+function createExtraFeeForm(seed = {}) {
+  return {
+    name: String(seed.name ?? "").trim(),
+    category: String(seed.category ?? "その他").trim() || "その他",
+    unitPrice: toPositiveInt(seed.unitPrice, 0),
+    notes: String(seed.notes ?? "").trim(),
+  };
+}
+
+function normalizePackCatalog(rawPacks, equipment) {
+  const validEquipIds = new Set((equipment || []).map((item) => item.id));
+  return (Array.isArray(rawPacks) ? rawPacks : []).map((pack, index) => ({
+    id: String(pack?.id ?? `pack-${Date.now()}-${index}`),
+    name: String(pack?.name ?? "").trim() || `セット${index + 1}`,
+    price: toPositiveInt(pack?.price, 0),
+    notes: String(pack?.notes ?? "").trim(),
+    items: (Array.isArray(pack?.items) ? pack.items : [])
+      .map((entry, itemIndex) => ({
+        id: String(entry?.id ?? `pack-item-${Date.now()}-${index}-${itemIndex}`),
+        equipId: toPositiveInt(entry?.equipId, 0),
+        qty: Math.max(1, toPositiveInt(entry?.qty, 1)),
+      }))
+      .filter((entry) => entry.equipId > 0 && (validEquipIds.size === 0 || validEquipIds.has(entry.equipId))),
+  }));
+}
+
+function normalizeExtraFeeTemplates(rawTemplates) {
+  return (Array.isArray(rawTemplates) ? rawTemplates : [])
+    .map((item) => createExtraFeeTemplate(item))
+    .filter((item) => Boolean(item.name));
+}
+
+function normalizeEstimateProjects(rawProjects, equipment, packs = [], extraFeeTemplates = []) {
+  const validEquipIds = new Set((equipment || []).map((item) => item.id));
+  const validPackIds = new Set((packs || []).map((item) => item.id));
+  const templateMap = new Map((extraFeeTemplates || []).map((item) => [item.id, item]));
+
+  return (Array.isArray(rawProjects) ? rawProjects : []).map((project, index) => ({
+    id: String(project?.id ?? `estimate-${Date.now()}-${index}`),
+    name: String(project?.name ?? "").trim() || `見積もり${index + 1}`,
+    items: (Array.isArray(project?.items) ? project.items : [])
+      .map((item, itemIndex) => ({
+        id: String(item?.id ?? `estimate-item-${Date.now()}-${index}-${itemIndex}`),
+        equipId: toPositiveInt(item?.equipId, 0),
+        qty: Math.max(1, toPositiveInt(item?.qty, 1)),
+      }))
+      .filter((item) => item.equipId > 0 && (validEquipIds.size === 0 || validEquipIds.has(item.equipId))),
+    packItems: (Array.isArray(project?.packItems) ? project.packItems : [])
+      .map((item, itemIndex) => ({
+        id: String(item?.id ?? `estimate-pack-${Date.now()}-${index}-${itemIndex}`),
+        packId: String(item?.packId ?? "").trim(),
+        qty: Math.max(1, toPositiveInt(item?.qty, 1)),
+      }))
+      .filter((item) => item.packId && (validPackIds.size === 0 || validPackIds.has(item.packId))),
+    extraItems: (Array.isArray(project?.extraItems) ? project.extraItems : []).map((item) => {
+      const template = templateMap.get(String(item?.extraFeeId ?? "").trim());
+      return createEstimateExtraItem({
+        ...item,
+        extraFeeId: String(item?.extraFeeId ?? "").trim(),
+        name: String(item?.name ?? template?.name ?? "").trim(),
+        category: String(item?.category ?? template?.category ?? "その他").trim() || "その他",
+        unitPrice: toPositiveInt(item?.unitPrice, template?.unitPrice ?? 0),
+        notes: String(item?.notes ?? template?.notes ?? "").trim(),
+      });
+    }).filter((item) => Boolean(item.name)),
+  }));
+}
+
+function getEquipmentDependencyRules(sourceEquipId) {
+  return state.dependencyRules
+    .filter((rule) => rule.sourceEquipId === Number(sourceEquipId))
+    .map((rule) => createDependencyRuleDraft(rule));
+}
+
 function createAddForm(seed = {}) {
   const ownerships = Array.isArray(seed.ownerships) && seed.ownerships.length > 0
     ? seed.ownerships.map((entry) => createOwnershipRow(entry.name, entry.qty))
@@ -307,6 +625,7 @@ function createAddForm(seed = {}) {
     types: Array.isArray(seed.types) ? seed.types : [],
     typeDraft: seed.typeDraft ?? "",
     stock: seed.stock ?? (ownershipTotal || 1),
+    price: seed.price ?? 0,
     notes: seed.notes ?? "",
     imageUrl: seed.imageUrl ?? "",
     imageFileData: seed.imageFileData ?? "",
@@ -315,11 +634,15 @@ function createAddForm(seed = {}) {
     manualFileData: seed.manualFileData ?? "",
     manualFileName: seed.manualFileName ?? "",
     ownerships,
+    dependencyRules: Array.isArray(seed.dependencyRules)
+      ? seed.dependencyRules.map((entry) => createDependencyRuleDraft(entry))
+      : [],
   };
 }
 
-function normalizeSelectionProjects(rawProjects, equipment) {
+function normalizeSelectionProjects(rawProjects, equipment, packs = []) {
   const validEquipIds = new Set((equipment || []).map((item) => item.id));
+  const validPackIds = new Set((packs || []).map((item) => item.id));
 
   return (Array.isArray(rawProjects) ? rawProjects : []).map((project, index) => {
     const items = (Array.isArray(project?.items) ? project.items : [])
@@ -330,10 +653,19 @@ function normalizeSelectionProjects(rawProjects, equipment) {
       }))
       .filter((item) => item.equipId > 0 && (validEquipIds.size === 0 || validEquipIds.has(item.equipId)));
 
+    const packItems = (Array.isArray(project?.packItems) ? project.packItems : [])
+      .map((item, itemIndex) => ({
+        id: String(item?.id ?? `pack-selection-${Date.now()}-${index}-${itemIndex}`),
+        packId: String(item?.packId ?? "").trim(),
+        qty: Math.max(1, toPositiveInt(item?.qty, 1)),
+      }))
+      .filter((item) => item.packId && (validPackIds.size === 0 || validPackIds.has(item.packId)));
+
     return {
       id: String(project?.id ?? `project-${Date.now()}-${index}`),
       name: String(project?.name ?? "").trim() || `現場${index + 1}`,
       items,
+      packItems,
     };
   });
 }
@@ -341,16 +673,45 @@ function normalizeSelectionProjects(rawProjects, equipment) {
 function loadCachedSharedState() {
   const storedEquipment = loadJSON(STORAGE_KEYS.equipment, INITIAL_EQUIPMENT);
   const equipment = (Array.isArray(storedEquipment) ? storedEquipment : INITIAL_EQUIPMENT).map(normalizeEquipment);
+  const packs = normalizePackCatalog(loadJSON(STORAGE_KEYS.packs, []), equipment);
+  const extraFeeTemplates = normalizeExtraFeeTemplates(loadJSON(STORAGE_KEYS.extraFeeTemplates, []));
   const history = normalizeHistory(loadJSON(STORAGE_KEYS.history, []), equipment);
-  const selectionProjects = normalizeSelectionProjects(loadJSON(STORAGE_KEYS.selectionProjects, []), equipment);
+  const estimateProjects = normalizeEstimateProjects(loadJSON(STORAGE_KEYS.estimateProjects, []), equipment, packs, extraFeeTemplates);
+  const selectionProjects = normalizeSelectionProjects(loadJSON(STORAGE_KEYS.selectionProjects, []), equipment, packs);
+  const dependencyRules = normalizeDependencyRules(loadJSON(STORAGE_KEYS.dependencyRules, []), equipment);
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
 
-  return {
+  const initialSnapshot = {
     equipment,
+    packs,
+    extraFeeTemplates,
     history,
+    estimateProjects,
     selectionProjects,
+    dependencyRules,
     nextId: Math.max(toPositiveInt(loadJSON(STORAGE_KEYS.nextId, maxId + 1), maxId + 1), maxId + 1),
   };
+
+  return stripLegacySampleState(initialSnapshot).snapshot;
+}
+
+function normalizeDependencyRules(rawRules, equipment) {
+  const validIds = new Set((equipment || []).map((item) => item.id));
+  return (Array.isArray(rawRules) ? rawRules : [])
+    .map((rule, index) => ({
+      id: String(rule?.id ?? `rule-${Date.now()}-${index}`),
+      sourceEquipId: toPositiveInt(rule?.sourceEquipId, 0),
+      targetEquipId: toPositiveInt(rule?.targetEquipId, 0),
+      sourcePerTarget: Math.max(1, toPositiveInt(rule?.sourcePerTarget, 1)),
+      description: String(rule?.description ?? "").trim(),
+      required: Boolean(rule?.required),
+    }))
+    .filter((rule) => (
+      rule.sourceEquipId > 0
+      && rule.targetEquipId > 0
+      && rule.sourceEquipId !== rule.targetEquipId
+      && (validIds.size === 0 || (validIds.has(rule.sourceEquipId) && validIds.has(rule.targetEquipId)))
+    ));
 }
 
 const cachedSharedState = loadCachedSharedState();
@@ -358,13 +719,29 @@ const cachedSharedState = loadCachedSharedState();
 const state = {
   tab: "list",
   equipment: cachedSharedState.equipment,
+  packs: cachedSharedState.packs,
+  extraFeeTemplates: cachedSharedState.extraFeeTemplates,
   history: cachedSharedState.history,
   nextId: cachedSharedState.nextId,
+  estimateProjects: cachedSharedState.estimateProjects,
   selectionProjects: cachedSharedState.selectionProjects,
+  dependencyRules: cachedSharedState.dependencyRules,
+  activeEstimateProjectId: cachedSharedState.estimateProjects[0]?.id ?? null,
   activeSelectionProjectId: cachedSharedState.selectionProjects[0]?.id ?? null,
   showAddModal: false,
+  showPackModal: false,
+  showExtraFeeModal: false,
   editingEquipmentId: null,
+  editingPackId: null,
+  editingExtraFeeTemplateId: null,
+  estimateSectionOpen: {
+    packages: true,
+    extras: true,
+  },
   showCheckoutModal: false,
+  showPriceCalcModal: false,
+  priceCalcProjectId: null,
+  priceCalcAdjustments: [],
   returnModal: null,
   mediaViewer: null,
   searchText: "",
@@ -373,6 +750,8 @@ const state = {
   filterType: "",
   filterOwnership: "",
   addForm: createAddForm(),
+  packForm: createPackForm(),
+  extraFeeForm: createExtraFeeForm(),
   checkoutForm: null,
   checkoutProjectId: null,
   sync: {
@@ -399,17 +778,25 @@ function createClientRevision() {
 
 function writeLocalCache() {
   localStorage.setItem(STORAGE_KEYS.equipment, JSON.stringify(state.equipment));
+  localStorage.setItem(STORAGE_KEYS.packs, JSON.stringify(state.packs));
+  localStorage.setItem(STORAGE_KEYS.extraFeeTemplates, JSON.stringify(state.extraFeeTemplates));
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(state.history));
   localStorage.setItem(STORAGE_KEYS.nextId, JSON.stringify(state.nextId));
+  localStorage.setItem(STORAGE_KEYS.estimateProjects, JSON.stringify(state.estimateProjects));
   localStorage.setItem(STORAGE_KEYS.selectionProjects, JSON.stringify(state.selectionProjects));
+  localStorage.setItem(STORAGE_KEYS.dependencyRules, JSON.stringify(state.dependencyRules));
 }
 
 function serializeSharedState() {
   return {
     equipment: state.equipment,
+    packs: state.packs,
+    extraFeeTemplates: state.extraFeeTemplates,
     history: state.history,
     nextId: state.nextId,
+    estimateProjects: state.estimateProjects,
     selectionProjects: state.selectionProjects,
+    dependencyRules: state.dependencyRules,
     _meta: {
       clientRevision: state.sync.localRevision || "",
       savedAt: new Date().toISOString(),
@@ -423,14 +810,51 @@ function getRemoteClientRevision(rawState) {
 
 function applySharedState(rawState) {
   const equipment = (Array.isArray(rawState?.equipment) ? rawState.equipment : INITIAL_EQUIPMENT).map(normalizeEquipment);
+  const hasPacks = Object.prototype.hasOwnProperty.call(rawState || {}, "packs");
+  const hasExtraFeeTemplates = Object.prototype.hasOwnProperty.call(rawState || {}, "extraFeeTemplates");
+  const hasEstimateProjects = Object.prototype.hasOwnProperty.call(rawState || {}, "estimateProjects");
+  const hasSelectionProjects = Object.prototype.hasOwnProperty.call(rawState || {}, "selectionProjects");
+  const hasDependencyRules = Object.prototype.hasOwnProperty.call(rawState || {}, "dependencyRules");
+  const packs = hasPacks
+    ? normalizePackCatalog(rawState?.packs, equipment)
+    : normalizePackCatalog(state.packs, equipment);
+  const extraFeeTemplates = hasExtraFeeTemplates
+    ? normalizeExtraFeeTemplates(rawState?.extraFeeTemplates)
+    : normalizeExtraFeeTemplates(state.extraFeeTemplates);
   const history = normalizeHistory(rawState?.history, equipment);
-  const selectionProjects = normalizeSelectionProjects(rawState?.selectionProjects, equipment);
+  const estimateProjects = hasEstimateProjects
+    ? normalizeEstimateProjects(rawState?.estimateProjects, equipment, packs, extraFeeTemplates)
+    : normalizeEstimateProjects(state.estimateProjects, equipment, packs, extraFeeTemplates);
+  const selectionProjects = hasSelectionProjects
+    ? normalizeSelectionProjects(rawState?.selectionProjects, equipment, packs)
+    : normalizeSelectionProjects(state.selectionProjects, equipment, packs);
+  const dependencyRules = hasDependencyRules
+    ? normalizeDependencyRules(rawState?.dependencyRules, equipment)
+    : normalizeDependencyRules(state.dependencyRules, equipment);
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
+  const nextSnapshot = stripLegacySampleState({
+    equipment,
+    packs,
+    extraFeeTemplates,
+    history,
+    estimateProjects,
+    selectionProjects,
+    dependencyRules,
+    nextId: Math.max(toPositiveInt(rawState?.nextId, maxId + 1), maxId + 1),
+  });
 
-  state.equipment = equipment;
-  state.history = history;
-  state.nextId = Math.max(toPositiveInt(rawState?.nextId, maxId + 1), maxId + 1);
-  state.selectionProjects = selectionProjects;
+  state.equipment = nextSnapshot.snapshot.equipment;
+  state.packs = nextSnapshot.snapshot.packs;
+  state.extraFeeTemplates = nextSnapshot.snapshot.extraFeeTemplates;
+  state.history = nextSnapshot.snapshot.history;
+  state.nextId = nextSnapshot.snapshot.nextId;
+  state.estimateProjects = nextSnapshot.snapshot.estimateProjects;
+  state.selectionProjects = nextSnapshot.snapshot.selectionProjects;
+  state.dependencyRules = nextSnapshot.snapshot.dependencyRules;
+
+  if (!getEstimateProject(state.activeEstimateProjectId)) {
+    state.activeEstimateProjectId = estimateProjects[0]?.id ?? null;
+  }
 
   if (!getSelectionProject(state.activeSelectionProjectId)) {
     state.activeSelectionProjectId = selectionProjects[0]?.id ?? null;
@@ -448,10 +872,11 @@ function applySharedState(rawState) {
   }
 
   writeLocalCache();
+  return { strippedLegacySamples: nextSnapshot.stripped };
 }
 
 function canApplyRemoteStateImmediately() {
-  return !state.showAddModal && !state.showCheckoutModal && !state.returnModal;
+  return !state.showAddModal && !state.showPackModal && !state.showExtraFeeModal && !state.showCheckoutModal && !state.returnModal && !state.showPriceCalcModal;
 }
 
 function buildJSONPUrl(params = {}) {
@@ -541,7 +966,14 @@ async function refreshRemoteState(options = {}) {
     if (!response.hasState) {
       state.sync.loading = false;
       state.sync.error = "";
-      if (!state.sync.revision && (state.equipment.length > 0 || state.history.length > 0 || state.selectionProjects.length > 0)) {
+      if (!state.sync.revision && (
+        state.equipment.length > 0
+        || state.packs.length > 0
+        || state.history.length > 0
+        || state.estimateProjects.length > 0
+        || state.selectionProjects.length > 0
+        || state.dependencyRules.length > 0
+      )) {
         if (!state.sync.localRevision) {
           state.sync.localRevision = createClientRevision();
         }
@@ -567,13 +999,30 @@ async function refreshRemoteState(options = {}) {
       return false;
     }
 
-    applySharedState(response.state);
+    if (shouldPreferLocalSnapshot(response.state)) {
+      state.sync.loading = false;
+      state.sync.error = "";
+      if (!state.sync.localRevision) {
+        state.sync.localRevision = createClientRevision();
+      }
+      state.sync.pendingRemote = true;
+      scheduleRemoteSync(true);
+      render();
+      return false;
+    }
+
+    const applyResult = applySharedState(response.state);
     state.sync.loading = false;
     state.sync.error = "";
     state.sync.pendingRemote = false;
     state.sync.revision = revision;
     state.sync.lastSyncedAt = String(response.updatedAt || revision || "");
     state.sync.localRevision = remoteClientRevision || state.sync.localRevision || "";
+    if (applyResult?.strippedLegacySamples) {
+      state.sync.localRevision = createClientRevision();
+      state.sync.pendingRemote = true;
+      scheduleRemoteSync(true);
+    }
     render();
     return true;
   } catch (error) {
@@ -608,7 +1057,21 @@ async function flushRemoteSync() {
   render();
 
   try {
-    await postRemoteSharedState(serializeSharedState());
+    const localSnapshot = serializeSharedState();
+    const localContentCount = getSnapshotContentCount(stripLegacySampleState(localSnapshot).snapshot);
+
+    if (localContentCount === 0) {
+      await refreshRemoteState({ silent: true, force: true });
+
+      if (getSnapshotContentCount(stripLegacySampleState(getCurrentStateSnapshot()).snapshot) > 0) {
+        state.sync.saving = false;
+        state.sync.pendingRemote = false;
+        render();
+        return;
+      }
+    }
+
+    await postRemoteSharedState(localSnapshot);
     state.sync.saving = false;
     window.setTimeout(() => {
       refreshRemoteState({ silent: true });
@@ -652,9 +1115,13 @@ function buildExportPayload() {
     version: 1,
     exportedAt: new Date().toISOString(),
     equipment: state.equipment,
+    packs: state.packs,
+    extraFeeTemplates: state.extraFeeTemplates,
     history: state.history,
     nextId: state.nextId,
+    estimateProjects: state.estimateProjects,
     selectionProjects: state.selectionProjects,
+    dependencyRules: state.dependencyRules,
   };
 }
 
@@ -683,9 +1150,13 @@ function parseImportedData(rawText) {
     const equipment = parsed.map(normalizeEquipment);
     return {
       equipment,
+      packs: [],
+      extraFeeTemplates: [],
       history: [],
       nextId: parsed.reduce((max, item, index) => Math.max(max, toPositiveInt(item?.id, index + 1)), 0) + 1,
+      estimateProjects: [],
       selectionProjects: [],
+      dependencyRules: [],
     };
   }
 
@@ -698,15 +1169,23 @@ function parseImportedData(rawText) {
   }
 
   const equipment = parsed.equipment.map(normalizeEquipment);
+  const packs = normalizePackCatalog(parsed.packs, equipment);
+  const extraFeeTemplates = normalizeExtraFeeTemplates(parsed.extraFeeTemplates);
   const history = normalizeHistory(parsed.history, equipment);
-  const selectionProjects = normalizeSelectionProjects(parsed.selectionProjects, equipment);
+  const estimateProjects = normalizeEstimateProjects(parsed.estimateProjects, equipment, packs, extraFeeTemplates);
+  const selectionProjects = normalizeSelectionProjects(parsed.selectionProjects, equipment, packs);
+  const dependencyRules = normalizeDependencyRules(parsed.dependencyRules, equipment);
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
 
   return {
     equipment,
+    packs,
+    extraFeeTemplates,
     history,
     nextId: Math.max(toPositiveInt(parsed.nextId, maxId + 1), maxId + 1),
+    estimateProjects,
     selectionProjects,
+    dependencyRules,
   };
 }
 
@@ -723,9 +1202,14 @@ async function importAppData(file) {
     const rawText = await file.text();
     const imported = parseImportedData(rawText);
     state.equipment = imported.equipment;
+    state.packs = imported.packs || [];
+    state.extraFeeTemplates = imported.extraFeeTemplates || [];
     state.history = imported.history;
     state.nextId = imported.nextId;
+    state.estimateProjects = imported.estimateProjects || [];
     state.selectionProjects = imported.selectionProjects;
+    state.dependencyRules = imported.dependencyRules || [];
+    state.activeEstimateProjectId = imported.estimateProjects?.[0]?.id ?? null;
     state.activeSelectionProjectId = imported.selectionProjects[0]?.id ?? null;
     state.searchText = "";
     state.filterManufacturer = "";
@@ -746,6 +1230,14 @@ function openImportPicker() {
 
 function getEquipment(id) {
   return state.equipment.find((item) => item.id === Number(id));
+}
+
+function getPack(packId) {
+  return state.packs.find((item) => item.id === String(packId)) ?? null;
+}
+
+function getExtraFeeTemplate(templateId) {
+  return state.extraFeeTemplates.find((item) => item.id === String(templateId)) ?? null;
 }
 
 function getOwnershipNames() {
@@ -790,6 +1282,32 @@ function getSelectionProject(projectId) {
   return state.selectionProjects.find((project) => project.id === projectId) ?? null;
 }
 
+function getEstimateProject(projectId) {
+  return state.estimateProjects.find((project) => project.id === projectId) ?? null;
+}
+
+function getActiveEstimateProject() {
+  return getEstimateProject(state.activeEstimateProjectId);
+}
+
+function getEstimateSelections(projectId = state.activeEstimateProjectId) {
+  return getEstimateProject(projectId)?.items ?? [];
+}
+
+function getEstimatePackSelections(projectId = state.activeEstimateProjectId) {
+  return getEstimateProject(projectId)?.packItems ?? [];
+}
+
+function getEstimateExtraItems(projectId = state.activeEstimateProjectId) {
+  return getEstimateProject(projectId)?.extraItems ?? [];
+}
+
+function getEstimateSelectedExtraQty(projectId, templateId) {
+  return getEstimateExtraItems(projectId)
+    .filter((item) => item.extraFeeId === String(templateId))
+    .reduce((sum, item) => sum + item.qty, 0);
+}
+
 function getActiveSelectionProject() {
   return getSelectionProject(state.activeSelectionProjectId);
 }
@@ -798,12 +1316,85 @@ function getProjectSelections(projectId = state.activeSelectionProjectId) {
   return getSelectionProject(projectId)?.items ?? [];
 }
 
+function getProjectPackSelections(projectId = state.activeSelectionProjectId) {
+  return getSelectionProject(projectId)?.packItems ?? [];
+}
+
 function getProjectSelectedQty(projectId, equipId) {
   return getProjectSelections(projectId).find((item) => item.equipId === Number(equipId))?.qty ?? 0;
 }
 
+function getEstimateSelectedQty(projectId, equipId) {
+  return getEstimateSelections(projectId).find((item) => item.equipId === Number(equipId))?.qty ?? 0;
+}
+
+function getEstimateRequiredQty(projectId, equipId) {
+  const project = getEstimateProject(projectId);
+  if (!project) {
+    return 0;
+  }
+
+  const targetId = Number(equipId);
+  let qty = getEstimateSelectedQty(projectId, targetId);
+
+  (project.packItems || []).forEach((entry) => {
+    const pack = getPack(entry.packId);
+    (pack?.items || []).forEach((packItem) => {
+      if (packItem.equipId === targetId) {
+        qty += packItem.qty * entry.qty;
+      }
+    });
+  });
+
+  return qty;
+}
+
+function getEstimateRemainingStock(projectId, equipId) {
+  const item = getEquipment(equipId);
+  if (!item) {
+    return 0;
+  }
+
+  return Math.max(0, item.stock - getEstimateRequiredQty(projectId, equipId));
+}
+
+function canAddEstimateSelection(projectId, equipId) {
+  return getEstimateRemainingStock(projectId, equipId) > 0;
+}
+
+function canAddEstimatePackSelection(projectId, packId) {
+  const project = getEstimateProject(projectId);
+  const pack = getPack(packId);
+  if (!project || !pack) {
+    return false;
+  }
+
+  const requiredMap = new Map();
+  (pack.items || []).forEach((item) => {
+    requiredMap.set(item.equipId, (requiredMap.get(item.equipId) ?? 0) + item.qty);
+  });
+
+  if (requiredMap.size === 0) {
+    return true;
+  }
+
+  return Array.from(requiredMap.entries()).every(([equipId, qty]) => getEstimateRemainingStock(projectId, equipId) >= qty);
+}
+
 function getSelectedQty(equipId) {
   return getProjectSelectedQty(state.activeSelectionProjectId, equipId);
+}
+
+function getProjectSelectedPackQty(projectId, packId) {
+  return getProjectPackSelections(projectId).find((item) => item.packId === String(packId))?.qty ?? 0;
+}
+
+function getEstimateSelectedPackQty(projectId, packId) {
+  return getEstimatePackSelections(projectId).find((item) => item.packId === String(packId))?.qty ?? 0;
+}
+
+function getSelectedPackQty(packId) {
+  return getProjectSelectedPackQty(state.activeSelectionProjectId, packId);
 }
 
 function getReservedSelectionQty(equipId) {
@@ -815,14 +1406,49 @@ function getReservedSelectionQty(equipId) {
 
 function getSelectionProjectTotals(project) {
   const items = project?.items ?? [];
+  const packItems = project?.packItems ?? [];
   return {
     itemCount: items.length,
     qty: items.reduce((sum, item) => sum + item.qty, 0),
+    packCount: packItems.length,
+    packQty: packItems.reduce((sum, item) => sum + item.qty, 0),
   };
+}
+
+function getEstimateProjectTotals(project) {
+  const items = project?.items ?? [];
+  const packItems = project?.packItems ?? [];
+  const extraItems = project?.extraItems ?? [];
+  return {
+    itemCount: items.length,
+    qty: items.reduce((sum, item) => sum + item.qty, 0),
+    packCount: packItems.length,
+    packQty: packItems.reduce((sum, item) => sum + item.qty, 0),
+    extraCount: extraItems.length,
+  };
+}
+
+function getPackItemSummary(pack) {
+  return (pack?.items || [])
+    .map((entry) => {
+      const item = getEquipment(entry.equipId);
+      return item ? `${item.name} ×${entry.qty}` : "";
+    })
+    .filter(Boolean)
+    .join(" / ");
 }
 
 function getTotalSelectionQty() {
   return state.selectionProjects.reduce((sum, project) => sum + getSelectionProjectTotals(project).qty, 0);
+}
+
+function getNextEstimateProjectName() {
+  const names = new Set(state.estimateProjects.map((project) => project.name));
+  let index = 1;
+  while (names.has(`見積もり${index}`)) {
+    index += 1;
+  }
+  return `見積もり${index}`;
 }
 
 function getNextSelectionProjectName() {
@@ -839,6 +1465,17 @@ function createSelectionProject(name = "") {
     id: `project-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     name: String(name || "").trim() || getNextSelectionProjectName(),
     items: [],
+    packItems: [],
+  };
+}
+
+function createEstimateProject(name = "") {
+  return {
+    id: `estimate-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: String(name || "").trim() || getNextEstimateProjectName(),
+    items: [],
+    packItems: [],
+    extraItems: [],
   };
 }
 
@@ -854,11 +1491,31 @@ function ensureActiveSelectionProject() {
   return project;
 }
 
+function ensureActiveEstimateProject() {
+  const active = getActiveEstimateProject();
+  if (active) {
+    return active;
+  }
+
+  const project = createEstimateProject(getNextEstimateProjectName());
+  state.estimateProjects.push(project);
+  state.activeEstimateProjectId = project.id;
+  return project;
+}
+
 function setActiveSelectionProject(projectId) {
   if (!getSelectionProject(projectId)) {
     return;
   }
   state.activeSelectionProjectId = projectId;
+  render();
+}
+
+function setActiveEstimateProject(projectId) {
+  if (!getEstimateProject(projectId)) {
+    return;
+  }
+  state.activeEstimateProjectId = projectId;
   render();
 }
 
@@ -873,6 +1530,21 @@ function createSelectionProjectFromPrompt() {
   state.selectionProjects.push(project);
   state.activeSelectionProjectId = project.id;
   state.tab = "selected";
+  persistState();
+  render();
+}
+
+function createEstimateProjectFromPrompt() {
+  const suggestedName = getNextEstimateProjectName();
+  const input = window.prompt("見積もり名を入力してください。", suggestedName);
+  if (input === null) {
+    return;
+  }
+
+  const project = createEstimateProject(input.trim() || suggestedName);
+  state.estimateProjects.push(project);
+  state.activeEstimateProjectId = project.id;
+  state.tab = "estimate";
   persistState();
   render();
 }
@@ -896,6 +1568,58 @@ function deleteSelectionProject(projectId) {
     state.checkoutForm = null;
     state.checkoutProjectId = null;
   }
+  persistState();
+  render();
+}
+
+function deleteEstimateProject(projectId) {
+  const project = getEstimateProject(projectId);
+  if (!project) {
+    return;
+  }
+
+  if (!window.confirm(`「${project.name}」を削除しますか？`)) {
+    return;
+  }
+
+  state.estimateProjects = state.estimateProjects.filter((entry) => entry.id !== projectId);
+  if (state.activeEstimateProjectId === projectId) {
+    state.activeEstimateProjectId = state.estimateProjects[0]?.id ?? null;
+  }
+  persistState();
+  render();
+}
+
+function convertEstimateToSelection(projectId) {
+  const estimate = getEstimateProject(projectId);
+  if (!estimate) {
+    return;
+  }
+
+  const merged = new Map();
+  estimate.items.forEach((item) => {
+    merged.set(item.equipId, (merged.get(item.equipId) ?? 0) + item.qty);
+  });
+
+  estimate.packItems.forEach((entry) => {
+    const pack = getPack(entry.packId);
+    (pack?.items || []).forEach((packItem) => {
+      const qty = packItem.qty * entry.qty;
+      merged.set(packItem.equipId, (merged.get(packItem.equipId) ?? 0) + qty);
+    });
+  });
+
+  const project = createSelectionProject(`${estimate.name}`);
+  project.items = Array.from(merged.entries()).map(([equipId, qty]) => ({
+    id: `selection-${Date.now()}-${equipId}`,
+    equipId,
+    qty,
+  }));
+  project.packItems = [];
+
+  state.selectionProjects.push(project);
+  state.activeSelectionProjectId = project.id;
+  state.tab = "selected";
   persistState();
   render();
 }
@@ -941,6 +1665,181 @@ function formatAllocationSummary(allocations) {
 
 function formatTypesSummary(types) {
   return (types || []).join(" / ");
+}
+
+function formatPrice(amount) {
+  if (!amount && amount !== 0) return "-";
+  return `¥${Number(amount).toLocaleString("ja-JP")}`;
+}
+
+function getPriceAdjustmentBase(scope, items, subtotal) {
+  if (scope === "project") {
+    return {
+      amount: subtotal,
+      label: "全体",
+    };
+  }
+
+  const item = items.find((entry) => entry.scopeKey === String(scope));
+  return {
+    amount: item?.lineTotal ?? 0,
+    label: item?.name || "項目",
+  };
+}
+
+function getDependencyWarnings(projectId) {
+  const project = getSelectionProject(projectId);
+  if (!project || state.dependencyRules.length === 0) return [];
+
+  const selectedMap = new Map();
+  project.items.forEach((item) => selectedMap.set(item.equipId, item.qty));
+
+  const warnings = [];
+  state.dependencyRules.forEach((rule) => {
+    const sourceQty = selectedMap.get(rule.sourceEquipId) || 0;
+    if (sourceQty <= 0) return;
+
+    const neededTargetQty = Math.ceil(sourceQty / rule.sourcePerTarget);
+    const currentTargetQty = selectedMap.get(rule.targetEquipId) || 0;
+
+    if (currentTargetQty < neededTargetQty) {
+      const sourceItem = getEquipment(rule.sourceEquipId);
+      const targetItem = getEquipment(rule.targetEquipId);
+      warnings.push({
+        rule,
+        sourceItem,
+        targetItem,
+        sourceQty,
+        neededTargetQty,
+        currentTargetQty,
+        shortfall: neededTargetQty - currentTargetQty,
+        required: rule.required,
+      });
+    }
+  });
+
+  return warnings;
+}
+
+function calcProjectPrice(projectId, adjustments) {
+  const project = getEstimateProject(projectId);
+  if (!project) return { items: [], subtotal: 0, adjustments: [], total: 0 };
+
+  const equipmentItems = project.items.map((selection) => {
+    const item = getEquipment(selection.equipId);
+    const unitPrice = item?.price || 0;
+    const lineTotal = unitPrice * selection.qty;
+    return {
+      scopeKey: `equipment:${selection.equipId}`,
+      equipId: selection.equipId,
+      name: item ? `${item.manufacturer} ${item.name}` : "(不明)",
+      qty: selection.qty,
+      unitPrice,
+      lineTotal,
+    };
+  });
+
+  const packItems = (project.packItems || []).map((selection) => {
+    const pack = getPack(selection.packId);
+    const unitPrice = pack?.price || 0;
+    const lineTotal = unitPrice * selection.qty;
+    return {
+      scopeKey: `pack:${selection.packId}`,
+      packId: selection.packId,
+      name: pack ? `セット: ${pack.name}` : "セット(不明)",
+      qty: selection.qty,
+      unitPrice,
+      lineTotal,
+    };
+  });
+
+  const extraItems = (project.extraItems || []).map((entry) => ({
+    scopeKey: `extra:${entry.id}`,
+    extraId: entry.id,
+    name: `${entry.category}: ${entry.name}`,
+    qty: entry.qty,
+    unitPrice: entry.unitPrice,
+    lineTotal: entry.unitPrice * entry.qty,
+  }));
+
+  const items = [...equipmentItems, ...packItems, ...extraItems];
+
+  const subtotal = items.reduce((sum, entry) => sum + entry.lineTotal, 0);
+
+  const appliedAdjustments = (adjustments || []).map((adj) => {
+    const base = getPriceAdjustmentBase(adj.scope, items, subtotal);
+    let amount = 0;
+    if (adj.type === "discount-pct") {
+      amount = -Math.round(base.amount * (toPositiveInt(adj.value, 0) / 100));
+    } else if (adj.type === "surcharge-pct") {
+      amount = Math.round(base.amount * (toPositiveInt(adj.value, 0) / 100));
+    } else if (adj.type === "discount-fixed") {
+      amount = -toPositiveInt(adj.value, 0);
+    } else if (adj.type === "surcharge-fixed") {
+      amount = toPositiveInt(adj.value, 0);
+    }
+    return {
+      ...adj,
+      amount,
+      scopeLabel: base.label,
+    };
+  });
+
+  const adjustmentTotal = appliedAdjustments.reduce((sum, adj) => sum + adj.amount, 0);
+  const total = Math.max(0, subtotal + adjustmentTotal);
+
+  return { items, subtotal, adjustments: appliedAdjustments, total };
+}
+
+function openPriceCalcModal(projectId) {
+  const project = getEstimateProject(projectId);
+  if (!project) return;
+  state.priceCalcProjectId = projectId;
+  state.priceCalcAdjustments = [];
+  state.showPriceCalcModal = true;
+  render();
+}
+
+function closePriceCalcModal() {
+  state.showPriceCalcModal = false;
+  state.priceCalcProjectId = null;
+  state.priceCalcAdjustments = [];
+  render();
+}
+
+function addPriceAdjustment() {
+  state.priceCalcAdjustments.push(createPriceAdjustment());
+  render();
+}
+
+function removePriceAdjustment(adjId) {
+  state.priceCalcAdjustments = state.priceCalcAdjustments.filter((a) => a.id !== adjId);
+  render();
+}
+
+function syncPriceAdjustmentsFromDOM() {
+  const root = document.querySelector("[data-price-calc-form]");
+  if (!root) return;
+
+  state.priceCalcAdjustments = Array.from(root.querySelectorAll("[data-adj-row]")).map((row) => createPriceAdjustment({
+    id: row.dataset.adjId,
+    scope: row.querySelector("[data-adj-scope]")?.value || "project",
+    type: row.querySelector("[data-adj-type]")?.value || "discount-pct",
+    value: toPositiveInt(row.querySelector("[data-adj-value]")?.value, 0),
+    label: row.querySelector("[data-adj-label]")?.value.trim() || "",
+  }));
+}
+
+function addAddFormDependencyRule() {
+  syncAddFormFromDOM();
+  state.addForm.dependencyRules = [...(state.addForm.dependencyRules || []), createDependencyRuleDraft()];
+  render();
+}
+
+function removeAddFormDependencyRule(ruleId) {
+  syncAddFormFromDOM();
+  state.addForm.dependencyRules = (state.addForm.dependencyRules || []).filter((entry) => entry.id !== ruleId);
+  render();
 }
 
 function getActiveFilters(overrides = {}) {
@@ -1146,23 +2045,473 @@ function removeSelectionAll(equipId) {
   render();
 }
 
-function deleteEquipment(equipId) {
-  const item = getEquipment(equipId);
+function addPackSelection(packId) {
+  const pack = getPack(packId);
+  if (!pack) {
+    return;
+  }
+
+  const project = ensureActiveSelectionProject();
+  const existing = project.packItems.find((item) => item.packId === pack.id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    project.packItems.push({
+      id: `pack-selection-${Date.now()}-${pack.id}`,
+      packId: pack.id,
+      qty: 1,
+    });
+  }
+
+  persistState();
+  render();
+}
+
+function addEstimateSelection(equipId) {
+  const id = Number(equipId);
+  const project = ensureActiveEstimateProject();
+  if (!canAddEstimateSelection(project.id, id)) {
+    return;
+  }
+  const existing = project.items.find((item) => item.equipId === id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    project.items.push({ id: `estimate-selection-${Date.now()}-${id}`, equipId: id, qty: 1 });
+  }
+  persistState();
+  render();
+}
+
+function removeEstimateSelectionUnit(equipId) {
+  const id = Number(equipId);
+  const project = getActiveEstimateProject();
+  const item = project?.items.find((selection) => selection.equipId === id);
+  if (!item) {
+    return;
+  }
+  if (item.qty <= 1) {
+    project.items = project.items.filter((selection) => selection.equipId !== id);
+  } else {
+    item.qty -= 1;
+  }
+  persistState();
+  render();
+}
+
+function removeEstimateSelectionAll(equipId) {
+  const id = Number(equipId);
+  const project = getActiveEstimateProject();
+  if (!project) {
+    return;
+  }
+  project.items = project.items.filter((selection) => selection.equipId !== id);
+  persistState();
+  render();
+}
+
+function addEstimatePackSelection(packId) {
+  const pack = getPack(packId);
+  if (!pack) {
+    return;
+  }
+  const project = ensureActiveEstimateProject();
+  if (!canAddEstimatePackSelection(project.id, pack.id)) {
+    return;
+  }
+  const existing = project.packItems.find((item) => item.packId === pack.id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    project.packItems.push({ id: `estimate-pack-selection-${Date.now()}-${pack.id}`, packId: pack.id, qty: 1 });
+  }
+  persistState();
+  render();
+}
+
+function removeEstimatePackSelectionUnit(packId) {
+  const project = getActiveEstimateProject();
+  if (!project) {
+    return;
+  }
+  const item = project.packItems.find((entry) => entry.packId === String(packId));
+  if (!item) {
+    return;
+  }
+  if (item.qty <= 1) {
+    project.packItems = project.packItems.filter((entry) => entry.packId !== String(packId));
+  } else {
+    item.qty -= 1;
+  }
+  persistState();
+  render();
+}
+
+function removeEstimatePackSelectionAll(packId) {
+  const project = getActiveEstimateProject();
+  if (!project) {
+    return;
+  }
+  project.packItems = project.packItems.filter((entry) => entry.packId !== String(packId));
+  persistState();
+  render();
+}
+
+function upsertExtraFeeTemplate(templateId = null) {
+  openExtraFeeModal(templateId);
+}
+
+function deleteExtraFeeTemplate(templateId, options = {}) {
+  const current = getExtraFeeTemplate(templateId);
+  if (!current) {
+    return false;
+  }
+  if (!window.confirm(`「${current.name}」を削除しますか？`)) {
+    return false;
+  }
+  state.extraFeeTemplates = state.extraFeeTemplates.filter((item) => item.id !== templateId);
+  state.estimateProjects = state.estimateProjects.map((project) => ({
+    ...project,
+    extraItems: project.extraItems.map((item) => (
+      item.extraFeeId === String(templateId)
+        ? { ...item, extraFeeId: "" }
+        : item
+    )),
+  }));
+  if (options.closeModal) {
+    state.showExtraFeeModal = false;
+    state.editingExtraFeeTemplateId = null;
+    state.extraFeeForm = createExtraFeeForm();
+  }
+  persistState();
+  render();
+  return true;
+}
+
+function addEstimateExtraSelection(templateId) {
+  const project = ensureActiveEstimateProject();
+  const template = getExtraFeeTemplate(templateId);
+  if (!template) {
+    return;
+  }
+
+  const existing = project.extraItems.find((item) => item.extraFeeId === template.id);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    project.extraItems.push(createEstimateExtraItem({
+      extraFeeId: template.id,
+      name: template.name,
+      category: template.category,
+      unitPrice: template.unitPrice,
+      notes: template.notes,
+      qty: 1,
+    }));
+  }
+  persistState();
+  render();
+}
+
+function removeEstimateExtraSelectionUnit(templateId) {
+  const project = getActiveEstimateProject();
+  if (!project) {
+    return;
+  }
+  const current = project.extraItems.find((item) => item.extraFeeId === String(templateId));
+  if (!current) {
+    return;
+  }
+  if (current.qty <= 1) {
+    project.extraItems = project.extraItems.filter((item) => item.extraFeeId !== String(templateId));
+  } else {
+    current.qty -= 1;
+  }
+  persistState();
+  render();
+}
+
+function removeEstimateExtraSelectionAll(templateId) {
+  const project = getActiveEstimateProject();
+  if (!project) {
+    return;
+  }
+  project.extraItems = project.extraItems.filter((item) => item.extraFeeId !== String(templateId));
+  persistState();
+  render();
+}
+
+function deleteEstimateExtraItem(extraId) {
+  const project = getActiveEstimateProject();
+  if (!project) {
+    return;
+  }
+  project.extraItems = project.extraItems.filter((item) => item.id !== extraId);
+  persistState();
+  render();
+}
+
+function removePackSelectionUnit(packId) {
+  const project = getActiveSelectionProject();
+  if (!project) {
+    return;
+  }
+
+  const item = project.packItems.find((entry) => entry.packId === String(packId));
   if (!item) {
     return;
   }
 
+  if (item.qty <= 1) {
+    project.packItems = project.packItems.filter((entry) => entry.packId !== String(packId));
+  } else {
+    item.qty -= 1;
+  }
+
+  persistState();
+  render();
+}
+
+function removePackSelectionAll(packId) {
+  const project = getActiveSelectionProject();
+  if (!project) {
+    return;
+  }
+  project.packItems = project.packItems.filter((entry) => entry.packId !== String(packId));
+  persistState();
+  render();
+}
+
+function deleteEquipment(equipId, options = {}) {
+  const item = getEquipment(equipId);
+  if (!item) {
+    return false;
+  }
+
   if (!window.confirm(`「${item.name}」を削除しますか？`)) {
+    return false;
+  }
+
+  const targetId = Number(equipId);
+  state.equipment = state.equipment.filter((entry) => entry.id !== targetId);
+  state.dependencyRules = state.dependencyRules.filter((rule) => rule.sourceEquipId !== targetId && rule.targetEquipId !== targetId);
+  state.packs = state.packs.map((pack) => ({
+    ...pack,
+    items: pack.items.filter((entry) => entry.equipId !== targetId),
+  }));
+  state.estimateProjects = state.estimateProjects.map((project) => ({
+    ...project,
+    items: project.items.filter((selection) => selection.equipId !== targetId),
+  }));
+  state.selectionProjects = state.selectionProjects.map((project) => ({
+    ...project,
+    items: project.items.filter((selection) => selection.equipId !== targetId),
+  }));
+  state.history = state.history.filter((entry) => entry.equipId !== targetId);
+  if (options.closeModal) {
+    state.showAddModal = false;
+    state.editingEquipmentId = null;
+    state.addForm = createAddForm();
+  }
+  persistState();
+  render();
+  return true;
+}
+
+function openPackModal(packId = null) {
+  if (!packId) {
+    state.editingPackId = null;
+    state.packForm = createPackForm();
+    state.showPackModal = true;
+    render();
     return;
   }
 
-  state.equipment = state.equipment.filter((entry) => entry.id !== Number(equipId));
-  state.selectionProjects = state.selectionProjects.map((project) => ({
-    ...project,
-    items: project.items.filter((selection) => selection.equipId !== Number(equipId)),
-  }));
+  const pack = getPack(packId);
+  if (!pack) {
+    return;
+  }
+
+  state.editingPackId = pack.id;
+  state.packForm = createPackForm(pack);
+  state.showPackModal = true;
+  render();
+}
+
+function openExtraFeeModal(templateId = null) {
+  if (!templateId) {
+    state.editingExtraFeeTemplateId = null;
+    state.extraFeeForm = createExtraFeeForm();
+    state.showExtraFeeModal = true;
+    render();
+    return;
+  }
+
+  const template = getExtraFeeTemplate(templateId);
+  if (!template) {
+    return;
+  }
+
+  state.editingExtraFeeTemplateId = template.id;
+  state.extraFeeForm = createExtraFeeForm(template);
+  state.showExtraFeeModal = true;
+  render();
+}
+
+function syncPackFormFromDOM() {
+  const root = document.querySelector("[data-pack-form]");
+  if (!root) {
+    return;
+  }
+
+  state.packForm = {
+    name: root.querySelector("#pack-name")?.value.trim() ?? "",
+    price: toPositiveInt(root.querySelector("#pack-price")?.value, 0),
+    notes: root.querySelector("#pack-notes")?.value.trim() ?? "",
+    items: Array.from(root.querySelectorAll("[data-pack-item-row]"))
+      .map((row) => createPackItemRow({
+        id: row.dataset.rowId,
+        equipId: toPositiveInt(row.querySelector("[data-pack-item-equip]")?.value, 0),
+        qty: Math.max(1, toPositiveInt(row.querySelector("[data-pack-item-qty]")?.value, 1)),
+      }))
+      .filter((entry) => entry.equipId > 0),
+  };
+}
+
+function syncExtraFeeFormFromDOM() {
+  const root = document.querySelector("[data-extra-fee-form]");
+  if (!root) {
+    return;
+  }
+
+  state.extraFeeForm = createExtraFeeForm({
+    name: root.querySelector("#extra-fee-name")?.value.trim() ?? "",
+    category: root.querySelector("#extra-fee-category")?.value.trim() ?? "その他",
+    unitPrice: toPositiveInt(root.querySelector("#extra-fee-unit-price")?.value, 0),
+    notes: root.querySelector("#extra-fee-notes")?.value.trim() ?? "",
+  });
+}
+
+function addPackItemRow() {
+  syncPackFormFromDOM();
+  state.packForm.items.push(createPackItemRow());
+  render();
+}
+
+function removePackItemRow(rowId) {
+  syncPackFormFromDOM();
+  state.packForm.items = state.packForm.items.filter((entry) => entry.id !== rowId);
+  if (state.packForm.items.length === 0) {
+    state.packForm.items.push(createPackItemRow());
+  }
+  render();
+}
+
+function validatePackForm(form) {
+  if (!String(form.name || "").trim()) {
+    return "セット名を入力してください。";
+  }
+  if (!Array.isArray(form.items) || form.items.length === 0) {
+    return "セットに含める機材を1件以上入力してください。";
+  }
+  return null;
+}
+
+function validateExtraFeeForm(form) {
+  if (!String(form.name || "").trim()) {
+    return "項目名を入力してください。";
+  }
+  return null;
+}
+
+function savePackFromForm() {
+  syncPackFormFromDOM();
+  const errorMessage = validatePackForm(state.packForm);
+  if (errorMessage) {
+    window.alert(errorMessage);
+    return;
+  }
+
+  const nextPack = {
+    id: state.editingPackId || `pack-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: state.packForm.name.trim(),
+    price: toPositiveInt(state.packForm.price, 0),
+    notes: state.packForm.notes.trim(),
+    items: state.packForm.items.map((entry) => ({
+      id: entry.id,
+      equipId: toPositiveInt(entry.equipId, 0),
+      qty: Math.max(1, toPositiveInt(entry.qty, 1)),
+    })).filter((entry) => entry.equipId > 0),
+  };
+
+  if (state.editingPackId) {
+    state.packs = state.packs.map((entry) => entry.id === state.editingPackId ? nextPack : entry);
+  } else {
+    state.packs.push(nextPack);
+  }
+
+  state.showPackModal = false;
+  state.editingPackId = null;
+  state.packForm = createPackForm();
   persistState();
   render();
+}
+
+function saveExtraFeeFromForm() {
+  syncExtraFeeFormFromDOM();
+  const errorMessage = validateExtraFeeForm(state.extraFeeForm);
+  if (errorMessage) {
+    window.alert(errorMessage);
+    return;
+  }
+
+  const nextItem = createExtraFeeTemplate({
+    id: state.editingExtraFeeTemplateId,
+    name: state.extraFeeForm.name,
+    category: state.extraFeeForm.category,
+    unitPrice: state.extraFeeForm.unitPrice,
+    notes: state.extraFeeForm.notes,
+  });
+
+  if (state.editingExtraFeeTemplateId) {
+    state.extraFeeTemplates = state.extraFeeTemplates.map((item) => item.id === state.editingExtraFeeTemplateId ? nextItem : item);
+  } else {
+    state.extraFeeTemplates.push(nextItem);
+  }
+
+  state.extraFeeTemplates.sort((a, b) => compareText(a.category, b.category) || compareText(a.name, b.name));
+  state.showExtraFeeModal = false;
+  state.editingExtraFeeTemplateId = null;
+  state.extraFeeForm = createExtraFeeForm();
+  persistState();
+  render();
+}
+
+function deletePack(packId, options = {}) {
+  const pack = getPack(packId);
+  if (!pack) {
+    return false;
+  }
+  if (!window.confirm(`「${pack.name}」を削除しますか？`)) {
+    return false;
+  }
+
+  state.packs = state.packs.filter((entry) => entry.id !== String(packId));
+  state.estimateProjects = state.estimateProjects.map((project) => ({
+    ...project,
+    packItems: project.packItems.filter((entry) => entry.packId !== String(packId)),
+  }));
+  state.selectionProjects = state.selectionProjects.map((project) => ({
+    ...project,
+    packItems: project.packItems.filter((entry) => entry.packId !== String(packId)),
+  }));
+  if (options.closeModal) {
+    state.showPackModal = false;
+    state.editingPackId = null;
+    state.packForm = createPackForm();
+  }
+  persistState();
+  render();
+  return true;
 }
 
 function openEditModal(equipId) {
@@ -1178,6 +2527,7 @@ function openEditModal(equipId) {
     genres: item.genres,
     types: item.types,
     stock: item.stock,
+    price: item.price,
     notes: item.notes,
     imageUrl: item.imageUrl,
     imageFileData: item.imageFileData,
@@ -1186,6 +2536,7 @@ function openEditModal(equipId) {
     manualFileData: item.manualFileData,
     manualFileName: item.manualFileName,
     ownerships: item.ownerships,
+    dependencyRules: getEquipmentDependencyRules(item.id),
   });
   state.showAddModal = true;
   render();
@@ -1359,6 +2710,7 @@ function syncAddFormFromDOM() {
     types: Array.from(root.querySelectorAll("[data-type-chip]")).map((chip) => chip.dataset.value).filter(Boolean),
     typeDraft: root.querySelector("#add-type")?.value.trim() ?? "",
     stock: root.querySelector("#add-stock")?.value ?? 0,
+    price: toPositiveInt(root.querySelector("#add-price")?.value, 0),
     notes: root.querySelector("#add-notes")?.value ?? "",
     imageUrl: root.querySelector("#add-image-url")?.value.trim() ?? state.addForm.imageUrl ?? "",
     imageFileData: state.addForm.imageFileData ?? "",
@@ -1367,6 +2719,15 @@ function syncAddFormFromDOM() {
     manualFileData: state.addForm.manualFileData ?? "",
     manualFileName: state.addForm.manualFileName ?? "",
     ownerships,
+    dependencyRules: Array.from(root.querySelectorAll("[data-add-dependency-row]"))
+      .map((row) => createDependencyRuleDraft({
+        id: row.dataset.ruleId,
+        targetEquipId: toPositiveInt(row.querySelector("[data-add-dependency-target]")?.value, 0),
+        sourcePerTarget: Math.max(1, toPositiveInt(row.querySelector("[data-add-dependency-ratio]")?.value, 1)),
+        description: row.querySelector("[data-add-dependency-desc]")?.value ?? "",
+        required: row.querySelector("[data-add-dependency-required]")?.checked,
+      }))
+      .filter((rule) => rule.targetEquipId > 0),
   };
 }
 
@@ -1484,6 +2845,10 @@ function validateAddForm(form) {
     return "総数は 0 以上で入力してください。";
   }
 
+  if (stock === 0 && ownerships.length === 0) {
+    return null;
+  }
+
   if (ownerships.length === 0) {
     return "所有を1件以上入力してください。";
   }
@@ -1505,12 +2870,24 @@ function addOwnershipRow() {
   render();
 }
 
+function addAddFormDependencyRule() {
+  syncAddFormFromDOM();
+  state.addForm.dependencyRules = [...(state.addForm.dependencyRules || []), createDependencyRuleDraft()];
+  render();
+}
+
 function removeOwnershipRow(rowId) {
   syncAddFormFromDOM();
   state.addForm.ownerships = state.addForm.ownerships.filter((entry) => entry.id !== rowId);
-  if (state.addForm.ownerships.length === 0) {
+  if (state.addForm.ownerships.length === 0 && toPositiveInt(state.addForm.stock, 0) > 0) {
     state.addForm.ownerships.push(createOwnershipRow("", 0));
   }
+  render();
+}
+
+function removeAddFormDependencyRule(ruleId) {
+  syncAddFormFromDOM();
+  state.addForm.dependencyRules = (state.addForm.dependencyRules || []).filter((entry) => entry.id !== ruleId);
   render();
 }
 
@@ -1572,6 +2949,7 @@ function saveEquipmentFromForm() {
     genre: [...new Set((state.addForm.genres || []).map((entry) => String(entry).trim()).filter(Boolean))][0] || "",
     types: [...new Set((state.addForm.types || []).map((entry) => String(entry).trim()).filter(Boolean))],
     stock,
+    price: toPositiveInt(state.addForm.price, 0),
     notes: state.addForm.notes.trim(),
     imageUrl: state.addForm.imageUrl.trim(),
     imageFileData: state.addForm.imageFileData,
@@ -1582,12 +2960,28 @@ function saveEquipmentFromForm() {
     ownerships,
   };
 
+  const dependencyRules = (state.addForm.dependencyRules || [])
+    .map((rule) => ({
+      id: rule.id,
+      sourceEquipId: nextItem.id,
+      targetEquipId: toPositiveInt(rule.targetEquipId, 0),
+      sourcePerTarget: Math.max(1, toPositiveInt(rule.sourcePerTarget, 1)),
+      description: String(rule.description || "").trim(),
+      required: Boolean(rule.required),
+    }))
+    .filter((rule) => rule.targetEquipId > 0 && rule.targetEquipId !== nextItem.id);
+
   if (state.editingEquipmentId) {
     state.equipment = state.equipment.map((item) => item.id === state.editingEquipmentId ? nextItem : item);
   } else {
     state.equipment.push(nextItem);
     state.nextId += 1;
   }
+
+  state.dependencyRules = [
+    ...state.dependencyRules.filter((rule) => rule.sourceEquipId !== nextItem.id),
+    ...dependencyRules,
+  ];
 
   state.addForm = createAddForm();
   state.editingEquipmentId = null;
@@ -1826,6 +3220,12 @@ function renderList() {
                     <span class="info-label">所有</span>
                     <div class="ownership-list">${ownershipBadges(item.ownerships)}</div>
                   </div>
+                  ${item.price > 0 ? `
+                  <div class="info-group inventory-price">
+                    <span class="info-label">単価</span>
+                    <span class="price-value">${escapeHTML(formatPrice(item.price))}</span>
+                  </div>
+                  ` : ""}
                   <div class="info-group inventory-note">
                     <span class="info-label">メモ</span>
                     <p class="note-text line-clamp-2">${escapeHTML(item.notes || "-")}</p>
@@ -1834,8 +3234,8 @@ function renderList() {
 
                 <div class="card-actions">
                   <div class="action-cluster action-cluster-main">
-                    ${selectedQty > 0 ? `<button class="pill-action" data-action="remove-selection-unit" data-equip-id="${item.id}">-</button>` : ""}
-                    ${selectedQty > 0 ? `<span class="selected-qty">${selectedQty}</span>` : ""}
+                    <button class="pill-action" data-action="remove-selection-unit" data-equip-id="${item.id}" ${selectedQty <= 0 ? "disabled" : ""}>-</button>
+                    <span class="selected-qty ${selectedQty <= 0 ? "is-zero" : ""}">${selectedQty}</span>
                     <button class="pill-action" data-action="add-selection" data-equip-id="${item.id}" ${available <= 0 ? "disabled" : ""}>+</button>
                   </div>
                   <div class="action-cluster">
@@ -1849,9 +3249,6 @@ function renderList() {
                     >
                       ${manualIconSVG()}
                     </button>
-                  </div>
-                  <div class="action-cluster action-cluster-danger">
-                    <button class="pill-action pill-action-danger pill-action-compact" data-action="delete-equipment" data-equip-id="${item.id}">削除</button>
                   </div>
                 </div>
               </article>
@@ -1972,8 +3369,8 @@ function renderSelected() {
                   </div>
                   <div class="card-actions">
                     <div class="action-cluster action-cluster-main">
-                      ${selectedQty > 0 ? `<button class="pill-action" data-action="remove-selection-unit" data-equip-id="${item.id}">-</button>` : ""}
-                      ${selectedQty > 0 ? `<span class="selected-qty">${selectedQty}</span>` : ""}
+                      <button class="pill-action" data-action="remove-selection-unit" data-equip-id="${item.id}" ${selectedQty <= 0 ? "disabled" : ""}>-</button>
+                      <span class="selected-qty ${selectedQty <= 0 ? "is-zero" : ""}">${selectedQty}</span>
                       <button class="pill-action" data-action="add-selection" data-equip-id="${item.id}" ${available <= 0 ? "disabled" : ""}>+</button>
                     </div>
                   </div>
@@ -1997,6 +3394,26 @@ function renderSelected() {
             <p>${escapeHTML(project.name)} に入っている機材です。</p>
           </div>
         </div>
+
+        ${(() => {
+          const warnings = getDependencyWarnings(project.id);
+          if (warnings.length === 0) return "";
+          return `
+            <div class="dependency-warnings">
+              <div class="dependency-warnings-head">
+                <span class="dependency-warnings-icon">⚠</span>
+                <strong>機材の追加条件に関する提案</strong>
+              </div>
+              ${warnings.map((w) => `
+                <div class="dependency-warning-item ${w.required ? "dependency-warning-required" : ""}">
+                  <span>${escapeHTML(w.sourceItem?.name || "?")} ×${w.sourceQty} に対して ${escapeHTML(w.targetItem?.name || "?")} が ${w.neededTargetQty}台 必要です（現在 ${w.currentTargetQty}台、あと ${w.shortfall}台 不足）</span>
+                  ${w.rule.description ? `<span class="dependency-warning-desc">${escapeHTML(w.rule.description)}</span>` : ""}
+                  ${w.required ? badge("必須", "badge-red") : badge("推奨", "badge-amber")}
+                </div>
+              `).join("")}
+            </div>
+          `;
+        })()}
 
         ${project.items.length > 0 ? `
           <div class="selection-grid">
@@ -2024,6 +3441,7 @@ function renderSelected() {
                   <div class="card-actions">
                     <div class="action-cluster action-cluster-main">
                       <button class="pill-action" data-action="remove-selection-unit" data-equip-id="${selection.equipId}">-</button>
+                      <span class="selected-qty">${selection.qty}</span>
                       <button class="pill-action" data-action="add-selection" data-equip-id="${selection.equipId}" ${getAvailable(selection.equipId) <= 0 ? "disabled" : ""}>+</button>
                     </div>
                     <div class="action-cluster action-cluster-danger">
@@ -2115,6 +3533,7 @@ function renderAddModal() {
   const genreOptions = getFieldOptions("genres");
   const typeOptions = getFieldOptions("types");
   const ownershipNames = getOwnershipNames();
+  const dependencyTargetOptions = state.equipment.filter((item) => item.id !== state.editingEquipmentId);
   const ownershipTotal = state.addForm.ownerships.reduce((sum, entry) => sum + toPositiveInt(entry.qty, 0), 0);
   const stock = toPositiveInt(state.addForm.stock, 0);
   const statusClass = ownershipTotal === stock ? "form-status-ok" : "form-status-warn";
@@ -2148,6 +3567,10 @@ function renderAddModal() {
             <div class="field">
               <label for="add-stock">総数</label>
               <input id="add-stock" class="number-input" type="number" min="0" value="${stock}" />
+            </div>
+            <div class="field">
+              <label for="add-price">単価（税込）</label>
+              <input id="add-price" class="number-input" type="number" min="0" value="${toPositiveInt(state.addForm.price, 0)}" placeholder="0" />
             </div>
           </div>
 
@@ -2227,6 +3650,45 @@ function renderAddModal() {
               <input id="add-notes" class="text-input" type="text" placeholder="任意のメモ" value="${escapeHTML(state.addForm.notes)}" />
             </div>
             <div class="field field-wide">
+              <div class="ownership-editor dependency-editor-inline">
+                <div class="ownership-editor-head">
+                  <div>
+                    <h3>追加条件</h3>
+                    <p>この機材を追加したときに関係する機材条件を設定します。</p>
+                  </div>
+                  <button class="ghost-button" data-action="add-add-form-dependency-rule">条件を追加</button>
+                </div>
+
+                ${(state.addForm.dependencyRules || []).length > 0
+                  ? state.addForm.dependencyRules.map((rule) => `
+                    <div class="dependency-rule-row add-form-dependency-row" data-add-dependency-row data-rule-id="${escapeHTML(rule.id)}">
+                      <div class="dep-rule-fields dep-rule-fields-add-form">
+                        <div class="field">
+                          <label>必要機材</label>
+                          <select class="select" data-add-dependency-target>
+                            <option value="">選択してください</option>
+                            ${dependencyTargetOptions.map((item) => `<option value="${item.id}"${rule.targetEquipId === item.id ? " selected" : ""}>${escapeHTML(item.manufacturer)} ${escapeHTML(item.name)}</option>`).join("")}
+                          </select>
+                        </div>
+                        <div class="field">
+                          <label>この機材何台ごとに1台必要</label>
+                          <input class="number-input" data-add-dependency-ratio type="number" min="1" value="${rule.sourcePerTarget}" />
+                        </div>
+                        <div class="field">
+                          <label>説明</label>
+                          <input class="text-input" data-add-dependency-desc type="text" placeholder="例: 2chレシーバー" value="${escapeHTML(rule.description)}" />
+                        </div>
+                        <div class="field field-checkbox field-checkbox-stack">
+                          <label><input type="checkbox" data-add-dependency-required ${rule.required ? "checked" : ""} /> 必須</label>
+                        </div>
+                      </div>
+                      <button class="pill-action pill-action-danger" data-action="remove-add-form-dependency-rule" data-rule-id="${escapeHTML(rule.id)}">削除</button>
+                    </div>
+                  `).join("")
+                  : `<div class="sub-note">追加条件は未設定です。必要な場合だけ追加してください。</div>`}
+              </div>
+            </div>
+            <div class="field field-wide">
               <label for="add-image-url">画像</label>
               <div class="attachment-editor">
                 <input id="add-image-url" class="text-input" type="text" placeholder="画像URLを入力" value="${escapeHTML(state.addForm.imageUrl)}" />
@@ -2256,6 +3718,7 @@ function renderAddModal() {
         </div>
 
         <div class="modal-actions">
+          ${isEditing ? `<button class="danger-button" data-action="delete-equipment-in-modal">削除する</button>` : ""}
           <button class="ghost-button" data-action="close-add-modal">キャンセル</button>
           <button class="primary-button" data-action="confirm-add-equipment">${isEditing ? "更新する" : "追加する"}</button>
         </div>
@@ -2473,6 +3936,497 @@ function renderReturnModal() {
   `;
 }
 
+function renderEstimates() {
+  const project = getActiveEstimateProject();
+  const filtered = getFilteredEquipment();
+  const manufacturerOptions = getLinkedFilterOptions("manufacturer");
+  const ownershipNames = getLinkedFilterOptions("ownership");
+  const genreOptions = getLinkedFilterOptions("genre");
+  const typeOptions = getLinkedFilterOptions("type");
+  const projectTotals = getEstimateProjectTotals(project);
+  const packagesOpen = state.estimateSectionOpen.packages;
+  const extrasOpen = state.estimateSectionOpen.extras;
+
+  return `
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>見積もり</h2>
+          <p>必要機材、セット、追加費用を含めて金額を組み立てます。</p>
+        </div>
+        <button class="primary-button" data-action="create-estimate-project">見積もりを追加</button>
+      </div>
+
+      ${state.estimateProjects.length > 0 ? `
+        <div class="project-grid">
+          ${state.estimateProjects.map((entry) => {
+            const totals = getEstimateProjectTotals(entry);
+            return `
+              <article class="project-card ${state.activeEstimateProjectId === entry.id ? "active" : ""}">
+                <button class="project-card-main" data-action="set-active-estimate-project" data-project-id="${escapeHTML(entry.id)}">
+                  <strong>${escapeHTML(entry.name)}</strong>
+                  <span>機材 ${totals.qty} 点 / セット ${totals.packQty} 件 / 追加費用 ${totals.extraCount} 件</span>
+                </button>
+                <button class="asset-icon-button inline" data-action="delete-estimate-project" data-project-id="${escapeHTML(entry.id)}" aria-label="見積もりを削除">×</button>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      ` : `
+        <div class="empty-state selection-empty-state">
+          <div class="empty-state-mark">+</div>
+          <h2>見積もりがまだありません</h2>
+          <p>まず見積もりを作成すると、この中へ機材や費用を追加できます。</p>
+          <button class="primary-button" data-action="create-estimate-project">見積もりを作成</button>
+        </div>
+      `}
+
+      ${project ? `
+        <section class="panel section-panel-inner">
+          <div class="section-head">
+            <div>
+              <h2>${escapeHTML(project.name)}</h2>
+              <p>この見積もりに必要機材、セット、追加費用を登録します。</p>
+            </div>
+            <div class="selection-workspace-actions">
+              <span class="selection-project-summary">機材 ${projectTotals.qty} 点 / セット ${projectTotals.packQty} 件 / 追加費用 ${projectTotals.extraCount} 件</span>
+              <button class="secondary-button price-calc-button" data-action="open-price-calc-modal" data-project-id="${escapeHTML(project.id)}">料金計算</button>
+              <button class="ghost-button" data-action="convert-estimate-to-selection" data-project-id="${escapeHTML(project.id)}">選定へ転用</button>
+            </div>
+          </div>
+
+          <section class="panel section-panel-inner estimate-subsection estimate-panel-packages">
+            <div class="section-head">
+              <div>
+                <h2>セット</h2>
+                <p>見積もりの中で使うセット商品です。</p>
+              </div>
+              <div class="section-head-actions">
+                <button class="mini-button" data-action="toggle-estimate-section" data-section="packages">${packagesOpen ? "畳む" : "開く"}</button>
+                <button class="primary-button" data-action="open-pack-modal">セットを追加</button>
+              </div>
+            </div>
+
+            ${packagesOpen ? `
+              ${state.packs.length > 0 ? `
+                <div class="inventory-grid pack-grid">
+                  ${state.packs.map((pack) => {
+                    const selectedQty = getEstimateSelectedPackQty(project.id, pack.id);
+                    const canAdd = canAddEstimatePackSelection(project.id, pack.id);
+                    return `
+                      <article class="inventory-card pack-card">
+                        <div class="inventory-card-top">
+                          <div class="inventory-card-main">
+                            <div class="equipment-cell">
+                              <span class="manufacturer-chip">SET</span>
+                              <span class="equipment-name">${escapeHTML(pack.name)}</span>
+                            </div>
+                            <div class="inventory-inline-groups">
+                              <div class="inline-info">
+                                <span class="info-label">料金</span>
+                                <span class="price-value">${escapeHTML(formatPrice(pack.price))}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="inventory-card-bottom">
+                          <div class="info-group info-group-wide">
+                            <span class="info-label">内容</span>
+                            <p class="note-text">${escapeHTML(getPackItemSummary(pack) || "機材未設定")}</p>
+                          </div>
+                        </div>
+                        <div class="card-actions">
+                          <div class="action-cluster action-cluster-main">
+                            <button class="pill-action" data-action="remove-estimate-pack-selection-unit" data-pack-id="${escapeHTML(pack.id)}" ${selectedQty <= 0 ? "disabled" : ""}>-</button>
+                            <span class="selected-qty ${selectedQty <= 0 ? "is-zero" : ""}">${selectedQty}</span>
+                            <button class="pill-action" data-action="add-estimate-pack-selection" data-pack-id="${escapeHTML(pack.id)}" ${!canAdd ? "disabled" : ""}>+</button>
+                          </div>
+                          <div class="action-cluster">
+                            <button class="pill-action pill-action-edit" data-action="open-edit-pack-modal" data-pack-id="${escapeHTML(pack.id)}">編集</button>
+                          </div>
+                        </div>
+                      </article>
+                    `;
+                  }).join("")}
+                </div>
+              ` : `<div class="empty-state compact"><p>セットはまだありません。</p></div>`}
+            ` : `
+              <div class="estimate-collapsed-note">${projectTotals.packQty} 件を選択中</div>
+            `}
+          </section>
+
+          <section class="panel section-panel-inner estimate-subsection estimate-panel-extras">
+            <div class="section-head">
+              <div>
+                <h2>追加費用</h2>
+                <p>あらかじめ登録した費用項目を、この見積もりへ呼び出して使います。</p>
+              </div>
+              <div class="section-head-actions">
+                <button class="mini-button" data-action="toggle-estimate-section" data-section="extras">${extrasOpen ? "畳む" : "開く"}</button>
+                <button class="primary-button" data-action="create-extra-fee-template">項目を登録</button>
+              </div>
+            </div>
+
+            ${extrasOpen ? `
+              ${state.extraFeeTemplates.length > 0 ? `
+                <div class="inventory-grid pack-grid extra-fee-grid">
+                  ${state.extraFeeTemplates.map((item) => {
+                    const selectedQty = getEstimateSelectedExtraQty(project.id, item.id);
+                    return `
+                      <article class="inventory-card extra-template-card">
+                        <div class="inventory-card-top">
+                          <div class="inventory-card-main">
+                            <div class="equipment-cell">
+                              <span class="manufacturer-chip">FEE</span>
+                              <span class="equipment-name">${escapeHTML(item.name)}</span>
+                            </div>
+                            <div class="inventory-inline-groups">
+                              <div class="inline-info">
+                                <span class="info-label">区分</span>
+                                <span>${escapeHTML(item.category)}</span>
+                              </div>
+                              <div class="inline-info">
+                                <span class="info-label">単価</span>
+                                <span class="price-value">${escapeHTML(formatPrice(item.unitPrice))}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="inventory-card-bottom">
+                          <div class="info-group info-group-wide">
+                            <span class="info-label">メモ</span>
+                            <p class="note-text">${escapeHTML(item.notes || "-")}</p>
+                          </div>
+                        </div>
+                        <div class="card-actions">
+                          <div class="action-cluster action-cluster-main">
+                            <button class="pill-action" data-action="remove-estimate-extra-selection-unit" data-template-id="${escapeHTML(item.id)}" ${selectedQty <= 0 ? "disabled" : ""}>-</button>
+                            <span class="selected-qty ${selectedQty <= 0 ? "is-zero" : ""}">${selectedQty}</span>
+                            <button class="pill-action" data-action="add-estimate-extra-selection" data-template-id="${escapeHTML(item.id)}">+</button>
+                          </div>
+                          <div class="action-cluster">
+                            <button class="pill-action pill-action-edit" data-action="edit-extra-fee-template" data-template-id="${escapeHTML(item.id)}">編集</button>
+                          </div>
+                        </div>
+                      </article>
+                    `;
+                  }).join("")}
+                </div>
+              ` : `<div class="empty-state compact"><p>追加費用テンプレートはまだありません。</p></div>`}
+
+              ${(project.extraItems || []).length > 0 ? `
+                <div class="estimate-selected-list">
+                  <div class="section-head estimate-selected-head">
+                    <div>
+                      <h3>選択中の追加費用</h3>
+                      <p>この見積もりに反映される費用項目です。</p>
+                    </div>
+                  </div>
+                  <div class="history-list">
+                    ${project.extraItems.map((item) => `
+                      <article class="history-card estimate-selected-extra-card">
+                        <header class="history-header">
+                          <div class="history-title">
+                            ${badge(item.category, "badge-gray")}
+                            <strong>${escapeHTML(item.name)}</strong>
+                            <span>${escapeHTML(formatPrice(item.unitPrice))} × ${item.qty}</span>
+                          </div>
+                          <div class="history-header-actions">
+                            <span>${escapeHTML(formatPrice(item.unitPrice * item.qty))}</span>
+                            ${item.extraFeeId ? `
+                              <button class="mini-button mini-button-danger" data-action="remove-estimate-extra-selection-all" data-template-id="${escapeHTML(item.extraFeeId)}">外す</button>
+                            ` : `
+                              <button class="mini-button mini-button-danger" data-action="delete-estimate-extra-item" data-extra-id="${escapeHTML(item.id)}">削除</button>
+                            `}
+                          </div>
+                        </header>
+                      </article>
+                    `).join("")}
+                  </div>
+                </div>
+              ` : ""}
+            ` : `
+              <div class="estimate-collapsed-note">${projectTotals.extraCount} 件を登録中</div>
+            `}
+          </section>
+
+          <div class="toolbar">
+            <div class="search-wrap">
+              <label class="sr-only" for="search-text">検索</label>
+              <input id="search-text" class="text-input" type="text" value="${escapeHTML(state.searchText)}" placeholder="メーカー・機材名・メモ・所有で検索" />
+            </div>
+            <button class="ghost-button" data-action="create-estimate-project">別見積もりを追加</button>
+          </div>
+
+          ${renderEquipmentFilterPanel(manufacturerOptions, genreOptions, typeOptions, ownershipNames)}
+
+          <div class="muted-row">
+            <span>${filtered.length} 件から見積もりへ追加できます</span>
+            <span>現在の見積もり: ${escapeHTML(project.name)}</span>
+          </div>
+
+          <div class="selection-picker-grid">
+            ${filtered.map((item) => {
+              const selectedQty = getEstimateSelectedQty(project.id, item.id);
+              const requiredQty = getEstimateRequiredQty(project.id, item.id);
+              const remainingStock = getEstimateRemainingStock(project.id, item.id);
+              const stockClass = remainingStock <= 0 ? "stock-empty" : remainingStock <= 2 ? "stock-low" : "stock-ok";
+              return `
+                <article class="inventory-card selection-picker-card">
+                  <div class="inventory-card-top">
+                    <div class="inventory-card-main">
+                      <div class="equipment-cell">
+                        ${equipmentHeading(item)}
+                      </div>
+                      <div class="inventory-inline-groups">
+                        <div class="inline-info">
+                          <span class="info-label">在庫残</span>
+                          <span class="stock ${stockClass}">${remainingStock}</span>
+                          <span class="inventory-stock-total">/ ${item.stock}</span>
+                        </div>
+                        <div class="inline-info">
+                          <span class="info-label">単価</span>
+                          <span class="price-value">${escapeHTML(formatPrice(item.price))}</span>
+                        </div>
+                        <div class="inline-info">
+                          <span class="info-label">見積数</span>
+                          <span>${requiredQty}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <div class="action-cluster action-cluster-main">
+                      <button class="pill-action" data-action="remove-estimate-selection-unit" data-equip-id="${item.id}" ${selectedQty <= 0 ? "disabled" : ""}>-</button>
+                      <span class="selected-qty ${selectedQty <= 0 ? "is-zero" : ""}">${selectedQty}</span>
+                      <button class="pill-action" data-action="add-estimate-selection" data-equip-id="${item.id}" ${remainingStock <= 0 ? "disabled" : ""}>+</button>
+                    </div>
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      ` : ""}
+
+    </section>
+  `;
+}
+
+function renderPackModal() {
+  if (!state.showPackModal) {
+    return "";
+  }
+
+  const isEditing = state.editingPackId !== null;
+
+  return `
+    <div class="modal open">
+      <div class="modal-backdrop" data-action="close-pack-modal"></div>
+      <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="pack-modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="pack-modal-title">${isEditing ? "セットを編集" : "セットを追加"}</h2>
+            <p>見積もり内で使うセット商品として、複数の機材を1つにまとめます。</p>
+          </div>
+          <button class="modal-close" data-action="close-pack-modal" aria-label="閉じる">×</button>
+        </div>
+
+        <div data-pack-form>
+          <div class="form-grid">
+            <div class="field">
+              <label for="pack-name">セット名</label>
+              <input id="pack-name" class="text-input" type="text" placeholder="例: 無線マイク3本セット" value="${escapeHTML(state.packForm.name)}" />
+            </div>
+            <div class="field">
+              <label for="pack-price">料金（税込）</label>
+              <input id="pack-price" class="number-input" type="number" min="0" value="${toPositiveInt(state.packForm.price, 0)}" />
+            </div>
+            <div class="field field-wide">
+              <label for="pack-notes">メモ</label>
+              <input id="pack-notes" class="text-input" type="text" placeholder="任意の説明" value="${escapeHTML(state.packForm.notes)}" />
+            </div>
+          </div>
+
+          <div class="ownership-editor dependency-editor-inline">
+            <div class="ownership-editor-head">
+              <div>
+                <h3>セット内容</h3>
+                <p>このセットに含める機材を登録します。</p>
+              </div>
+              <button class="ghost-button" data-action="add-pack-item-row">機材を追加</button>
+            </div>
+
+            ${state.packForm.items.map((entry) => `
+              <div class="dependency-rule-row add-form-dependency-row" data-pack-item-row data-row-id="${escapeHTML(entry.id)}">
+                <div class="dep-rule-fields dep-rule-fields-pack-form">
+                  <div class="field">
+                    <label>機材</label>
+                    <select class="select" data-pack-item-equip>
+                      <option value="">選択してください</option>
+                      ${state.equipment.map((item) => `<option value="${item.id}"${entry.equipId === item.id ? " selected" : ""}>${escapeHTML(item.manufacturer)} ${escapeHTML(item.name)}</option>`).join("")}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>数量</label>
+                    <input class="number-input" data-pack-item-qty type="number" min="1" value="${Math.max(1, toPositiveInt(entry.qty, 1))}" />
+                  </div>
+                </div>
+                <button class="pill-action pill-action-danger" data-action="remove-pack-item-row" data-row-id="${escapeHTML(entry.id)}">削除</button>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          ${isEditing ? `<button class="danger-button" data-action="delete-pack-in-modal">削除する</button>` : ""}
+          <button class="ghost-button" data-action="close-pack-modal">キャンセル</button>
+          <button class="primary-button" data-action="confirm-pack">${isEditing ? "更新する" : "追加する"}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderExtraFeeModal() {
+  if (!state.showExtraFeeModal) {
+    return "";
+  }
+
+  const isEditing = state.editingExtraFeeTemplateId !== null;
+
+  return `
+    <div class="modal open">
+      <div class="modal-backdrop" data-action="close-extra-fee-modal"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="extra-fee-modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="extra-fee-modal-title">${isEditing ? "追加費用項目を編集" : "追加費用項目を登録"}</h2>
+            <p>見積もりで繰り返し使う費用項目を登録します。</p>
+          </div>
+          <button class="modal-close" data-action="close-extra-fee-modal" aria-label="閉じる">×</button>
+        </div>
+
+        <div data-extra-fee-form>
+          <div class="form-grid">
+            <div class="field">
+              <label for="extra-fee-name">項目名</label>
+              <input id="extra-fee-name" class="text-input" type="text" placeholder="例: 音響オペレーター" value="${escapeHTML(state.extraFeeForm.name)}" />
+            </div>
+            <div class="field">
+              <label for="extra-fee-category">費用区分</label>
+              <input id="extra-fee-category" class="text-input" type="text" placeholder="例: 人件費" value="${escapeHTML(state.extraFeeForm.category)}" />
+            </div>
+            <div class="field">
+              <label for="extra-fee-unit-price">単価（税込）</label>
+              <input id="extra-fee-unit-price" class="number-input" type="number" min="0" value="${toPositiveInt(state.extraFeeForm.unitPrice, 0)}" />
+            </div>
+            <div class="field field-wide">
+              <label for="extra-fee-notes">メモ</label>
+              <input id="extra-fee-notes" class="text-input" type="text" placeholder="任意の説明" value="${escapeHTML(state.extraFeeForm.notes)}" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          ${isEditing ? `<button class="danger-button" data-action="delete-extra-fee-template-in-modal">削除する</button>` : ""}
+          <button class="ghost-button" data-action="close-extra-fee-modal">キャンセル</button>
+          <button class="primary-button" data-action="confirm-extra-fee">${isEditing ? "更新する" : "登録する"}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPriceCalcModal() {
+  if (!state.showPriceCalcModal || !state.priceCalcProjectId) return "";
+
+  const project = getEstimateProject(state.priceCalcProjectId);
+  if (!project) return "";
+
+  const calc = calcProjectPrice(state.priceCalcProjectId, state.priceCalcAdjustments);
+
+  return `
+    <div class="modal open">
+      <div class="modal-backdrop" data-action="close-price-calc-modal"></div>
+      <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="price-calc-modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="price-calc-modal-title">見積もり計算 - ${escapeHTML(project.name)}</h2>
+            <p>機材、セット、追加費用を含めた見積もり金額を確認できます。</p>
+          </div>
+          <button class="modal-close" data-action="close-price-calc-modal" aria-label="閉じる">×</button>
+        </div>
+
+        <div data-price-calc-form>
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>機材</th>
+                <th class="price-col">単価</th>
+                <th class="price-col">数量</th>
+                <th class="price-col">小計</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${calc.items.map((entry) => `
+                <tr>
+                  <td>${escapeHTML(entry.name)}</td>
+                  <td class="price-col">${escapeHTML(formatPrice(entry.unitPrice))}</td>
+                  <td class="price-col">${entry.qty}</td>
+                  <td class="price-col">${escapeHTML(formatPrice(entry.lineTotal))}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+            <tfoot>
+              <tr class="price-subtotal-row">
+                <td colspan="3"><strong>小計</strong></td>
+                <td class="price-col"><strong>${escapeHTML(formatPrice(calc.subtotal))}</strong></td>
+              </tr>
+              ${calc.adjustments.map((adj) => `
+                <tr class="price-adjustment-row ${adj.amount < 0 ? "discount" : "surcharge"}">
+                  <td colspan="3">${escapeHTML(adj.scopeLabel)} / ${escapeHTML(adj.label || (adj.amount < 0 ? "割引" : "割増"))} (${escapeHTML(adj.type.includes("pct") ? adj.value + "%" : formatPrice(adj.value))})</td>
+                  <td class="price-col">${adj.amount < 0 ? "" : "+"}${escapeHTML(formatPrice(Math.abs(adj.amount)))}${adj.amount < 0 ? " 引き" : ""}</td>
+                </tr>
+              `).join("")}
+              <tr class="price-total-row">
+                <td colspan="3"><strong>合計</strong></td>
+                <td class="price-col"><strong class="price-total-value">${escapeHTML(formatPrice(calc.total))}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="price-adjustments-section">
+            <h3>割引・割増設定</h3>
+            ${state.priceCalcAdjustments.map((adj) => `
+              <div class="price-adj-row" data-adj-row data-adj-id="${escapeHTML(adj.id)}">
+                <select class="select" data-adj-scope>
+                  <option value="project" ${adj.scope === "project" ? "selected" : ""}>全体</option>
+                  ${calc.items.map((entry) => `<option value="${escapeHTML(entry.scopeKey)}"${String(adj.scope) === String(entry.scopeKey) ? " selected" : ""}>${escapeHTML(entry.name)}</option>`).join("")}
+                </select>
+                <select class="select" data-adj-type>
+                  <option value="discount-pct" ${adj.type === "discount-pct" ? "selected" : ""}>割引（%）</option>
+                  <option value="surcharge-pct" ${adj.type === "surcharge-pct" ? "selected" : ""}>割増（%）</option>
+                  <option value="discount-fixed" ${adj.type === "discount-fixed" ? "selected" : ""}>割引（固定額）</option>
+                  <option value="surcharge-fixed" ${adj.type === "surcharge-fixed" ? "selected" : ""}>割増（固定額）</option>
+                </select>
+                <input class="number-input" data-adj-value type="number" min="0" value="${toPositiveInt(adj.value, 0)}" placeholder="値" />
+                <input class="text-input" data-adj-label type="text" value="${escapeHTML(adj.label)}" placeholder="ラベル（任意）" />
+                <button class="pill-action pill-action-danger" data-action="remove-price-adjustment" data-adj-id="${escapeHTML(adj.id)}">削除</button>
+              </div>
+            `).join("")}
+            <button class="ghost-button" data-action="add-price-adjustment">割引・割増を追加</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="ghost-button" data-action="close-price-calc-modal">閉じる</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function render() {
   const activeCheckoutCount = state.history
     .filter((item) => !item.returned)
@@ -2506,6 +4460,10 @@ function render() {
         <span class="tab-title">一覧</span>
         <span class="tab-caption">機材の確認と検索</span>
       </button>
+      <button class="tab-button ${state.tab === "estimate" ? "active" : ""}" data-action="set-tab" data-tab="estimate">
+        <span class="tab-title">見積もり</span>
+        <span class="tab-caption">金額算出用のリスト</span>
+      </button>
       <button class="tab-button ${state.tab === "selected" ? "active" : ""}" data-action="set-tab" data-tab="selected">
         <span class="tab-title">選定</span>
         <span class="tab-caption">持ち出し候補を整理</span>
@@ -2519,15 +4477,19 @@ function render() {
     </nav>
 
     ${state.tab === "list" ? renderList() : ""}
+  ${state.tab === "estimate" ? renderEstimates() : ""}
     ${state.tab === "selected" ? renderSelected() : ""}
     ${state.tab === "history" ? renderHistory() : ""}
     ${renderAddModal()}
+    ${renderPackModal()}
+    ${renderExtraFeeModal()}
     ${renderCheckoutModal()}
     ${renderReturnModal()}
     ${renderMediaViewer()}
+    ${renderPriceCalcModal()}
   `;
 
-  const hasOpenModal = state.showAddModal || state.showCheckoutModal || Boolean(state.returnModal) || Boolean(state.mediaViewer);
+  const hasOpenModal = state.showAddModal || state.showPackModal || state.showExtraFeeModal || state.showCheckoutModal || Boolean(state.returnModal) || Boolean(state.mediaViewer) || state.showPriceCalcModal;
   document.documentElement.classList.toggle("modal-open", hasOpenModal);
   document.body.classList.toggle("modal-open", hasOpenModal);
 }
@@ -2542,11 +4504,20 @@ app.addEventListener("click", (event) => {
     case "set-tab":
       setTab(target.dataset.tab);
       return;
+    case "create-estimate-project":
+      createEstimateProjectFromPrompt();
+      return;
     case "create-selection-project":
       createSelectionProjectFromPrompt();
       return;
+    case "set-active-estimate-project":
+      setActiveEstimateProject(target.dataset.projectId);
+      return;
     case "set-active-selection-project":
       setActiveSelectionProject(target.dataset.projectId);
+      return;
+    case "delete-estimate-project":
+      deleteEstimateProject(target.dataset.projectId);
       return;
     case "delete-selection-project":
       deleteSelectionProject(target.dataset.projectId);
@@ -2560,6 +4531,29 @@ app.addEventListener("click", (event) => {
       state.showAddModal = true;
       render();
       return;
+    case "open-pack-modal":
+      openPackModal();
+      return;
+    case "delete-pack-in-modal":
+      if (state.editingPackId) {
+        deletePack(state.editingPackId, { closeModal: true });
+      }
+      return;
+    case "close-extra-fee-modal":
+      state.showExtraFeeModal = false;
+      state.editingExtraFeeTemplateId = null;
+      state.extraFeeForm = createExtraFeeForm();
+      render();
+      if (state.sync.pendingRemote) {
+        refreshRemoteState({ silent: true, force: true });
+      }
+      return;
+    case "toggle-estimate-section":
+      if (target.dataset.section && Object.prototype.hasOwnProperty.call(state.estimateSectionOpen, target.dataset.section)) {
+        state.estimateSectionOpen[target.dataset.section] = !state.estimateSectionOpen[target.dataset.section];
+        render();
+      }
+      return;
     case "export-data":
       exportAppData();
       return;
@@ -2568,6 +4562,25 @@ app.addEventListener("click", (event) => {
       return;
     case "open-edit-modal":
       openEditModal(target.dataset.equipId);
+      return;
+    case "delete-equipment-in-modal":
+      if (state.editingEquipmentId !== null) {
+        deleteEquipment(state.editingEquipmentId, { closeModal: true });
+      }
+      return;
+    case "open-edit-pack-modal":
+      openPackModal(target.dataset.packId);
+      return;
+    case "create-extra-fee-template":
+      openExtraFeeModal();
+      return;
+    case "edit-extra-fee-template":
+      openExtraFeeModal(target.dataset.templateId);
+      return;
+    case "delete-extra-fee-template-in-modal":
+      if (state.editingExtraFeeTemplateId) {
+        deleteExtraFeeTemplate(state.editingExtraFeeTemplateId, { closeModal: true });
+      }
       return;
     case "open-image-viewer":
       openMediaViewer("image", target.dataset.equipId);
@@ -2590,11 +4603,32 @@ app.addEventListener("click", (event) => {
         refreshRemoteState({ silent: true, force: true });
       }
       return;
+    case "close-pack-modal":
+      state.showPackModal = false;
+      state.editingPackId = null;
+      state.packForm = createPackForm();
+      render();
+      if (state.sync.pendingRemote) {
+        refreshRemoteState({ silent: true, force: true });
+      }
+      return;
     case "add-ownership-row":
       addOwnershipRow();
       return;
+    case "add-pack-item-row":
+      addPackItemRow();
+      return;
+    case "add-add-form-dependency-rule":
+      addAddFormDependencyRule();
+      return;
     case "remove-ownership-row":
       removeOwnershipRow(target.dataset.rowId);
+      return;
+    case "remove-pack-item-row":
+      removePackItemRow(target.dataset.rowId);
+      return;
+    case "remove-add-form-dependency-rule":
+      removeAddFormDependencyRule(target.dataset.ruleId);
       return;
     case "add-type-chip":
       addTypeChip();
@@ -2616,6 +4650,12 @@ app.addEventListener("click", (event) => {
       return;
     case "confirm-add-equipment":
       saveEquipmentFromForm();
+      return;
+    case "confirm-pack":
+      savePackFromForm();
+      return;
+    case "confirm-extra-fee":
+      saveExtraFeeFromForm();
       return;
     case "open-checkout-modal":
       if (!getActiveSelectionProject()) {
@@ -2646,6 +4686,18 @@ app.addEventListener("click", (event) => {
     case "confirm-return-modal":
       confirmReturnModal();
       return;
+    case "convert-estimate-to-selection":
+      convertEstimateToSelection(target.dataset.projectId);
+      return;
+    case "add-estimate-selection":
+      addEstimateSelection(target.dataset.equipId);
+      return;
+    case "remove-estimate-selection-unit":
+      removeEstimateSelectionUnit(target.dataset.equipId);
+      return;
+    case "remove-estimate-selection-all":
+      removeEstimateSelectionAll(target.dataset.equipId);
+      return;
     case "add-selection":
       addSelection(target.dataset.equipId);
       return;
@@ -2655,8 +4707,32 @@ app.addEventListener("click", (event) => {
     case "remove-selection-all":
       removeSelectionAll(target.dataset.equipId);
       return;
-    case "delete-equipment":
-      deleteEquipment(target.dataset.equipId);
+    case "add-estimate-pack-selection":
+      addEstimatePackSelection(target.dataset.packId);
+      return;
+    case "remove-estimate-pack-selection-unit":
+      removeEstimatePackSelectionUnit(target.dataset.packId);
+      return;
+    case "remove-estimate-pack-selection-all":
+      removeEstimatePackSelectionAll(target.dataset.packId);
+      return;
+    case "delete-pack":
+      deletePack(target.dataset.packId);
+      return;
+    case "delete-extra-fee-template":
+      deleteExtraFeeTemplate(target.dataset.templateId);
+      return;
+    case "add-estimate-extra-selection":
+      addEstimateExtraSelection(target.dataset.templateId);
+      return;
+    case "remove-estimate-extra-selection-unit":
+      removeEstimateExtraSelectionUnit(target.dataset.templateId);
+      return;
+    case "remove-estimate-extra-selection-all":
+      removeEstimateExtraSelectionAll(target.dataset.templateId);
+      return;
+    case "delete-estimate-extra-item":
+      deleteEstimateExtraItem(target.dataset.extraId);
       return;
     case "return-equipment":
       openReturnModal(target.dataset.historyId);
@@ -2666,6 +4742,20 @@ app.addEventListener("click", (event) => {
       return;
     case "delete-history-group":
       deleteHistoryGroup(target.dataset.historyIds);
+      return;
+    case "open-price-calc-modal":
+      openPriceCalcModal(target.dataset.projectId);
+      return;
+    case "close-price-calc-modal":
+      closePriceCalcModal();
+      return;
+    case "add-price-adjustment":
+      syncPriceAdjustmentsFromDOM();
+      addPriceAdjustment();
+      return;
+    case "remove-price-adjustment":
+      syncPriceAdjustmentsFromDOM();
+      removePriceAdjustment(target.dataset.adjId);
       return;
     default:
       return;
@@ -2693,6 +4783,11 @@ app.addEventListener("input", (event) => {
   if (event.target.matches("[data-checkout-qty]")) {
     const row = event.target.closest("[data-checkout-row]");
     clampCheckoutAllocationInputs(row?.dataset.equipId, row?.dataset.ownerName);
+  }
+
+  if (event.target.matches("[data-adj-type]") || event.target.matches("[data-adj-value]") || event.target.matches("[data-adj-label]")) {
+    syncPriceAdjustmentsFromDOM();
+    render();
   }
 });
 
@@ -2760,7 +4855,12 @@ app.addEventListener("change", (event) => {
       render();
       return;
     default:
-      return;
+      break;
+  }
+
+  if (event.target.matches("[data-adj-type]") || event.target.matches("[data-adj-scope]")) {
+    syncPriceAdjustmentsFromDOM();
+    render();
   }
 });
 
