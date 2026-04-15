@@ -740,6 +740,9 @@ const state = {
   },
   showCheckoutModal: false,
   showPriceCalcModal: false,
+  showProjectModal: false,
+  projectModalType: "",
+  projectModalName: "",
   priceCalcProjectId: null,
   priceCalcAdjustments: [],
   returnModal: null,
@@ -1479,6 +1482,49 @@ function createEstimateProject(name = "") {
   };
 }
 
+function openProjectModal(type) {
+  const normalizedType = type === "estimate" ? "estimate" : "selection";
+  state.projectModalType = normalizedType;
+  state.projectModalName = normalizedType === "estimate"
+    ? getNextEstimateProjectName()
+    : getNextSelectionProjectName();
+  state.showProjectModal = true;
+  render();
+}
+
+function closeProjectModal({ shouldRender = true } = {}) {
+  state.showProjectModal = false;
+  state.projectModalType = "";
+  state.projectModalName = "";
+  if (shouldRender) {
+    render();
+  }
+}
+
+function confirmProjectModal() {
+  if (!state.showProjectModal || !state.projectModalType) {
+    return;
+  }
+
+  if (state.projectModalType === "estimate") {
+    const suggestedName = getNextEstimateProjectName();
+    const project = createEstimateProject(state.projectModalName.trim() || suggestedName);
+    state.estimateProjects.push(project);
+    state.activeEstimateProjectId = project.id;
+    state.tab = "estimate";
+  } else {
+    const suggestedName = getNextSelectionProjectName();
+    const project = createSelectionProject(state.projectModalName.trim() || suggestedName);
+    state.selectionProjects.push(project);
+    state.activeSelectionProjectId = project.id;
+    state.tab = "selected";
+  }
+
+  persistState();
+  closeProjectModal({ shouldRender: false });
+  render();
+}
+
 function ensureActiveSelectionProject() {
   const active = getActiveSelectionProject();
   if (active) {
@@ -1520,33 +1566,11 @@ function setActiveEstimateProject(projectId) {
 }
 
 function createSelectionProjectFromPrompt() {
-  const suggestedName = getNextSelectionProjectName();
-  const input = window.prompt("現場名を入力してください。", suggestedName);
-  if (input === null) {
-    return;
-  }
-
-  const project = createSelectionProject(input.trim() || suggestedName);
-  state.selectionProjects.push(project);
-  state.activeSelectionProjectId = project.id;
-  state.tab = "selected";
-  persistState();
-  render();
+  openProjectModal("selection");
 }
 
 function createEstimateProjectFromPrompt() {
-  const suggestedName = getNextEstimateProjectName();
-  const input = window.prompt("見積もり名を入力してください。", suggestedName);
-  if (input === null) {
-    return;
-  }
-
-  const project = createEstimateProject(input.trim() || suggestedName);
-  state.estimateProjects.push(project);
-  state.activeEstimateProjectId = project.id;
-  state.tab = "estimate";
-  persistState();
-  render();
+  openProjectModal("estimate");
 }
 
 function deleteSelectionProject(projectId) {
@@ -3884,6 +3908,46 @@ function renderCheckoutModal() {
   `;
 }
 
+function renderProjectModal() {
+  if (!state.showProjectModal) {
+    return "";
+  }
+
+  const isEstimate = state.projectModalType === "estimate";
+  const title = isEstimate ? "見積もりを作成" : "現場を作成";
+  const description = isEstimate
+    ? "モバイルでも使いやすい入力欄から見積もり名を登録できます。"
+    : "モバイルでも使いやすい入力欄から現場名を登録できます。";
+  const label = isEstimate ? "見積もり名" : "現場名";
+  const placeholder = isEstimate ? "例: 学園祭PA見積もり" : "例: 学園祭メインステージ";
+  const confirmLabel = isEstimate ? "見積もりを作成" : "現場を作成";
+
+  return `
+    <div class="modal open">
+      <div class="modal-backdrop" data-action="close-project-modal"></div>
+      <div class="modal-card modal-card-compact" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="project-modal-title">${title}</h2>
+            <p>${description}</p>
+          </div>
+          <button class="modal-close" data-action="close-project-modal" aria-label="閉じる">×</button>
+        </div>
+
+        <div class="field">
+          <label for="project-modal-name">${label}</label>
+          <input id="project-modal-name" class="text-input" type="text" value="${escapeHTML(state.projectModalName)}" placeholder="${placeholder}" />
+        </div>
+
+        <div class="modal-actions">
+          <button class="ghost-button" data-action="close-project-modal">キャンセル</button>
+          <button class="primary-button" data-action="confirm-project-modal">${confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderReturnModal() {
   if (!state.returnModal) {
     return "";
@@ -4478,14 +4542,23 @@ function render() {
     ${renderPackModal()}
     ${renderExtraFeeModal()}
     ${renderCheckoutModal()}
+    ${renderProjectModal()}
     ${renderReturnModal()}
     ${renderMediaViewer()}
     ${renderPriceCalcModal()}
   `;
 
-  const hasOpenModal = state.showAddModal || state.showPackModal || state.showExtraFeeModal || state.showCheckoutModal || Boolean(state.returnModal) || Boolean(state.mediaViewer) || state.showPriceCalcModal;
+  const hasOpenModal = state.showAddModal || state.showPackModal || state.showExtraFeeModal || state.showCheckoutModal || state.showProjectModal || Boolean(state.returnModal) || Boolean(state.mediaViewer) || state.showPriceCalcModal;
   document.documentElement.classList.toggle("modal-open", hasOpenModal);
   document.body.classList.toggle("modal-open", hasOpenModal);
+
+  if (state.showProjectModal) {
+    const input = document.getElementById("project-modal-name");
+    if (input && document.activeElement !== input) {
+      input.focus();
+      input.select();
+    }
+  }
 }
 
 app.addEventListener("click", (event) => {
@@ -4538,6 +4611,12 @@ app.addEventListener("click", (event) => {
       state.editingExtraFeeTemplateId = null;
       state.extraFeeForm = createExtraFeeForm();
       render();
+      if (state.sync.pendingRemote) {
+        refreshRemoteState({ silent: true, force: true });
+      }
+      return;
+    case "close-project-modal":
+      closeProjectModal();
       if (state.sync.pendingRemote) {
         refreshRemoteState({ silent: true, force: true });
       }
@@ -4677,6 +4756,9 @@ app.addEventListener("click", (event) => {
     case "confirm-checkout":
       checkoutFromForm();
       return;
+    case "confirm-project-modal":
+      confirmProjectModal();
+      return;
     case "confirm-return-modal":
       confirmReturnModal();
       return;
@@ -4768,6 +4850,11 @@ app.addEventListener("input", (event) => {
     return;
   }
 
+  if (event.target.id === "project-modal-name") {
+    state.projectModalName = event.target.value;
+    return;
+  }
+
   if (event.target.matches("[data-add-owner-qty]")) {
     const row = event.target.closest("[data-add-ownership-row]");
     clampAddOwnershipInputs(row?.dataset.rowId);
@@ -4794,6 +4881,11 @@ app.addEventListener("keydown", (event) => {
   if (event.target.id === "add-type" && event.key === "Enter") {
     event.preventDefault();
     addTypeChip();
+  }
+
+  if (event.target.id === "project-modal-name" && event.key === "Enter") {
+    event.preventDefault();
+    confirmProjectModal();
   }
 });
 
