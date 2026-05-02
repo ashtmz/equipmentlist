@@ -2951,6 +2951,671 @@ function downloadTextFile(filename, content, mimeType) {
   URL.revokeObjectURL(objectUrl);
 }
 
+function sanitizeFileName(value) {
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "_");
+  return normalized || "document";
+}
+
+function buildEquipmentLabel(item) {
+  if (!item) {
+    return "(不明)";
+  }
+  return [String(item.manufacturer || "").trim(), String(item.name || "").trim()]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function mergeQtyMapValue(map, key, qty) {
+  if (!key || qty <= 0) {
+    return;
+  }
+  map.set(key, (map.get(key) ?? 0) + qty);
+}
+
+function getSelectionProjectRequirementMap(project) {
+  const merged = new Map();
+
+  (project?.items || []).forEach((entry) => {
+    mergeQtyMapValue(merged, entry.equipId, toPositiveInt(entry.qty, 0));
+  });
+
+  (project?.packItems || []).forEach((entry) => {
+    const pack = getPack(entry.packId);
+    (pack?.items || []).forEach((packItem) => {
+      mergeQtyMapValue(merged, packItem.equipId, toPositiveInt(packItem.qty, 0) * toPositiveInt(entry.qty, 0));
+    });
+  });
+
+  return merged;
+}
+
+function getProjectHistoryEntries(projectName) {
+  const normalizedProjectName = String(projectName || "").trim();
+  return state.history.filter((item) => String(item.projectName || "").trim() === normalizedProjectName);
+}
+
+function groupHistoryEntries(entries) {
+  const buckets = new Map();
+
+  (entries || []).forEach((item) => {
+    const key = `${item.projectName || ""}|${item.person}|${item.destination}|${item.startDate || item.date || ""}|${item.endDate || item.date || ""}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+    }
+    buckets.get(key).push(item);
+  });
+
+  return Array.from(buckets.entries());
+}
+
+function renderPrintSummary(summaryItems) {
+  if (!Array.isArray(summaryItems) || summaryItems.length === 0) {
+    return "";
+  }
+
+  return `
+    <div class="print-summary-grid">
+      ${summaryItems.map((item) => `
+        <div class="print-summary-card">
+          <div class="print-summary-label">${escapeHTML(item.label)}</div>
+          <div class="print-summary-value">${escapeHTML(item.value)}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderPrintTable(headers, rows, emptyMessage = "出力対象がありません。") {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  return `
+    <table class="print-table">
+      <thead>
+        <tr>
+          ${headers.map((header) => `<th>${escapeHTML(header)}</th>`).join("")}
+        </tr>
+      </thead>
+      <tbody>
+        ${safeRows.length > 0
+          ? safeRows.map((cells) => `
+              <tr>
+                ${cells.map((cell) => `<td>${cell}</td>`).join("")}
+              </tr>
+            `).join("")
+          : `<tr><td colspan="${headers.length}" class="print-empty">${escapeHTML(emptyMessage)}</td></tr>`}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderPrintSection(title, body, description = "") {
+  return `
+    <section class="print-section">
+      <div class="print-section-head">
+        <h2>${escapeHTML(title)}</h2>
+        ${description ? `<p>${escapeHTML(description)}</p>` : ""}
+      </div>
+      ${body}
+    </section>
+  `;
+}
+
+function buildPrintDocument({ title, subtitle = "", sections = [] }) {
+  return `<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHTML(title)}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --line: #d7dee8;
+        --text: #1f2937;
+        --muted: #667085;
+        --accent: #243b63;
+        --accent-soft: #eef3fb;
+        --surface: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: "Avenir Next", "Hiragino Sans", "Yu Gothic", sans-serif;
+        background: #f7f8fa;
+      }
+
+      .print-shell {
+        padding: 24px;
+      }
+
+      .print-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 20px 24px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: linear-gradient(180deg, #fff 0%, #f9fbfe 100%);
+      }
+
+      .print-header h1 {
+        margin: 0;
+        font-size: 26px;
+      }
+
+      .print-header p {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+
+      .print-meta {
+        min-width: 180px;
+        text-align: right;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .print-section {
+        margin-top: 18px;
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--surface);
+        break-inside: avoid;
+      }
+
+      .print-section-head {
+        margin-bottom: 12px;
+      }
+
+      .print-section-head h2,
+      .print-subsection h3 {
+        margin: 0;
+      }
+
+      .print-section-head p,
+      .print-subsection p,
+      .print-inline-note {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .print-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .print-summary-card {
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: var(--accent-soft);
+        border: 1px solid #d8e2f3;
+      }
+
+      .print-summary-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .print-summary-value {
+        margin-top: 6px;
+        color: var(--accent);
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .print-table th,
+      .print-table td {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        font-size: 13px;
+        vertical-align: top;
+        text-align: left;
+      }
+
+      .print-table th {
+        background: #f3f6fb;
+        white-space: nowrap;
+      }
+
+      .print-empty {
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .print-subsection {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px dashed var(--line);
+      }
+
+      .print-subsection:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .print-status {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #eef2f7;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .print-note-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .print-note-list li + li {
+        margin-top: 6px;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        .print-shell {
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="print-shell">
+      <header class="print-header">
+        <div>
+          <h1>${escapeHTML(title)}</h1>
+          ${subtitle ? `<p>${escapeHTML(subtitle)}</p>` : ""}
+        </div>
+        <div class="print-meta">
+          出力日時<br />${escapeHTML(new Date().toLocaleString("ja-JP"))}
+        </div>
+      </header>
+      ${sections.join("")}
+    </div>
+    <script>
+      const runPrint = () => {
+        window.focus();
+        window.setTimeout(() => window.print(), 150);
+      };
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(runPrint);
+      } else {
+        window.addEventListener("load", runPrint, { once: true });
+      }
+
+      window.addEventListener("afterprint", () => {
+        window.close();
+      });
+    <\/script>
+  </body>
+</html>`;
+}
+
+function openPrintDocument({ title, subtitle = "", sections = [] }) {
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!printWindow) {
+    window.alert("PDF出力用の画面を開けませんでした。ポップアップを許可して再度お試しください。");
+    return;
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(buildPrintDocument({ title, subtitle, sections }));
+  printWindow.document.close();
+}
+
+function exportEstimatePdf(projectId = state.activeEstimateProjectId) {
+  const project = getEstimateProject(projectId);
+  if (!project) {
+    window.alert("見積もりが見つかりませんでした。");
+    return;
+  }
+
+  const calc = calcProjectPrice(project.id, []);
+  const sections = [
+    renderPrintSection(
+      "見積サマリー",
+      renderPrintSummary([
+        { label: "機材明細", value: `${project.items.length} 件` },
+        { label: "セット", value: `${(project.packItems || []).length} 件` },
+        { label: "追加費用", value: `${(project.extraItems || []).length} 件` },
+        { label: "小計", value: formatPrice(calc.subtotal) },
+        { label: "合計", value: formatPrice(calc.total) },
+      ]),
+      project.name
+    ),
+    renderPrintSection(
+      "見積明細",
+      renderPrintTable(
+        ["区分", "品目", "単価", "数量", "小計"],
+        calc.items.map((entry) => [
+          escapeHTML(entry.scopeKey.startsWith("equipment:") ? "機材" : entry.scopeKey.startsWith("pack:") ? "セット" : "追加費用"),
+          escapeHTML(entry.name),
+          escapeHTML(formatPrice(entry.unitPrice)),
+          escapeHTML(String(entry.qty)),
+          escapeHTML(formatPrice(entry.lineTotal)),
+        ]),
+        "見積明細がありません。"
+      )
+    ),
+  ];
+
+  if ((project.packItems || []).length > 0) {
+    sections.push(
+      renderPrintSection(
+        "選択中のセット",
+        renderPrintTable(
+          ["セット名", "数量", "単価", "内容"],
+          project.packItems.map((entry) => {
+            const pack = getPack(entry.packId);
+            return [
+              escapeHTML(pack?.name || "(不明)"),
+              escapeHTML(String(entry.qty)),
+              escapeHTML(formatPrice(pack?.price || 0)),
+              escapeHTML(getPackItemSummary(pack) || "-"),
+            ];
+          })
+        )
+      )
+    );
+  }
+
+  openPrintDocument({
+    title: `見積書 ${project.name}`,
+    subtitle: `保存時のファイル名目安: ${sanitizeFileName(`見積書_${project.name}`)}.pdf`,
+    sections,
+  });
+}
+
+function exportSelectionPdf(projectId = state.activeSelectionProjectId) {
+  const project = getSelectionProject(projectId);
+  if (!project) {
+    window.alert("現場が見つかりませんでした。");
+    return;
+  }
+
+  const requirementMap = getSelectionProjectRequirementMap(project);
+  const rows = Array.from(requirementMap.entries())
+    .map(([equipId, qty]) => {
+      const item = getEquipment(equipId);
+      return {
+        name: buildEquipmentLabel(item),
+        cells: [
+          escapeHTML(item?.manufacturer || "-"),
+          escapeHTML(item?.name || "(不明)"),
+          escapeHTML(formatTypesSummary(item?.genres || []) || "-"),
+          escapeHTML(formatTypesSummary(item?.types || []) || "-"),
+          escapeHTML(String(qty)),
+          escapeHTML(String(item?.stock ?? 0)),
+          escapeHTML(String(getAvailable(equipId))),
+          escapeHTML(formatOwnershipSummary(item?.ownerships || []) || "-"),
+        ],
+      };
+    })
+    .sort((a, b) => compareText(a.name, b.name));
+  const warnings = getDependencyWarnings(project.id);
+  const historyEntries = getProjectHistoryEntries(project.name);
+  const activeCheckoutQty = historyEntries.filter((entry) => !entry.returned).reduce((sum, entry) => sum + entry.qty, 0);
+  const sections = [
+    renderPrintSection(
+      "選定サマリー",
+      renderPrintSummary([
+        { label: "現場名", value: project.name },
+        { label: "選定機材数", value: `${rows.length} 種類` },
+        { label: "選定合計", value: `${rows.reduce((sum, entry) => sum + Number(entry.cells[4]), 0)} 点` },
+        { label: "持ち出し中", value: `${activeCheckoutQty} 点` },
+      ])
+    ),
+    renderPrintSection(
+      "選定表",
+      renderPrintTable(
+        ["メーカー", "機材名", "ジャンル", "種類", "選定数", "在庫", "現在残数", "所有内訳"],
+        rows.map((entry) => entry.cells),
+        "選定済み機材がありません。"
+      ),
+      project.name
+    ),
+  ];
+
+  if (warnings.length > 0) {
+    sections.push(
+      renderPrintSection(
+        "不足している関連機材",
+        renderPrintTable(
+          ["基準機材", "必要機材", "現在数", "必要数", "不足", "区分"],
+          warnings.map((warning) => [
+            escapeHTML(`${warning.sourceItem?.name || "?"} ×${warning.sourceQty}`),
+            escapeHTML(warning.targetItem?.name || "?"),
+            escapeHTML(String(warning.currentTargetQty)),
+            escapeHTML(String(warning.neededTargetQty)),
+            escapeHTML(String(warning.shortfall)),
+            escapeHTML(warning.required ? "必須" : "推奨"),
+          ])
+        ),
+        "選定条件に基づく補足です。"
+      )
+    );
+  }
+
+  openPrintDocument({
+    title: `選定表 ${project.name}`,
+    subtitle: `保存時のファイル名目安: ${sanitizeFileName(`選定表_${project.name}`)}.pdf`,
+    sections,
+  });
+}
+
+function exportCheckoutPdf(projectId = state.activeSelectionProjectId) {
+  const project = getSelectionProject(projectId);
+  if (!project) {
+    window.alert("現場が見つかりませんでした。");
+    return;
+  }
+
+  const historyEntries = getProjectHistoryEntries(project.name);
+  if (historyEntries.length === 0) {
+    window.alert("この現場には持ち出し履歴がありません。");
+    return;
+  }
+
+  const groups = groupHistoryEntries(historyEntries);
+  const sections = [
+    renderPrintSection(
+      "持ち出しサマリー",
+      renderPrintSummary([
+        { label: "現場名", value: project.name },
+        { label: "持ち出し件数", value: `${groups.length} 件` },
+        { label: "持ち出し点数", value: `${historyEntries.reduce((sum, entry) => sum + entry.qty, 0)} 点` },
+        { label: "未返却", value: `${historyEntries.filter((entry) => !entry.returned).reduce((sum, entry) => sum + entry.qty, 0)} 点` },
+      ])
+    ),
+  ];
+
+  groups.forEach(([key, items], index) => {
+    const [projectName, person, destination, startDate, endDate] = key.split("|");
+    const allReturned = items.every((item) => item.returned);
+    sections.push(
+      renderPrintSection(
+        `持ち出し ${index + 1}`,
+        `
+          <div class="print-subsection">
+            <span class="print-status">${escapeHTML(allReturned ? "返却済み" : "持ち出し中")}</span>
+            <p class="print-inline-note">担当: ${escapeHTML(person || "-")} / 持ち出し先: ${escapeHTML(destination || "-")} / 期間: ${escapeHTML(formatDateRange(startDate, endDate))}</p>
+          </div>
+          <div class="print-subsection">
+            ${renderPrintTable(
+              ["機材", "数量", "所有割当", "状態", "返却日"],
+              items.map((item) => [
+                escapeHTML(buildEquipmentLabel(getEquipment(item.equipId))),
+                escapeHTML(String(item.qty)),
+                escapeHTML(formatAllocationSummary(item.allocations) || "-"),
+                escapeHTML(item.returned ? "返却済み" : "持ち出し中"),
+                escapeHTML(item.returnDate || "-"),
+              ])
+            )}
+          </div>
+        `,
+        projectName || project.name
+      )
+    );
+  });
+
+  openPrintDocument({
+    title: `持ち出し表 ${project.name}`,
+    subtitle: `保存時のファイル名目安: ${sanitizeFileName(`持ち出し表_${project.name}`)}.pdf`,
+    sections,
+  });
+}
+
+function exportOverallResultPdf() {
+  const aggregate = new Map();
+
+  state.selectionProjects.forEach((project) => {
+    getSelectionProjectRequirementMap(project).forEach((qty, equipId) => {
+      const current = aggregate.get(equipId) ?? { qty: 0, projects: [] };
+      current.qty += qty;
+      current.projects.push(`${project.name} ×${qty}`);
+      aggregate.set(equipId, current);
+    });
+  });
+
+  if (aggregate.size === 0 && state.history.length === 0) {
+    window.alert("全体リザルトに出力できるデータがありません。");
+    return;
+  }
+
+  const aggregateRows = Array.from(aggregate.entries())
+    .map(([equipId, entry]) => {
+      const item = getEquipment(equipId);
+      return {
+        name: buildEquipmentLabel(item),
+        cells: [
+          escapeHTML(item?.manufacturer || "-"),
+          escapeHTML(item?.name || "(不明)"),
+          escapeHTML(String(item?.stock ?? 0)),
+          escapeHTML(String(entry.qty)),
+          escapeHTML(String(getCheckedOutQty(equipId))),
+          escapeHTML(String(getAvailable(equipId))),
+          escapeHTML(entry.projects.join(" / ")),
+        ],
+      };
+    })
+    .sort((a, b) => compareText(a.name, b.name));
+
+  const sections = [
+    renderPrintSection(
+      "全体サマリー",
+      renderPrintSummary([
+        { label: "現場数", value: `${state.selectionProjects.length} 件` },
+        { label: "選定合計", value: `${aggregateRows.reduce((sum, entry) => sum + Number(entry.cells[3]), 0)} 点` },
+        { label: "持ち出し中", value: `${state.history.filter((entry) => !entry.returned).reduce((sum, entry) => sum + entry.qty, 0)} 点` },
+        { label: "機材種類", value: `${aggregateRows.length} 種類` },
+      ])
+    ),
+    renderPrintSection(
+      "全体リザルト",
+      renderPrintTable(
+        ["メーカー", "機材名", "在庫", "選定合計", "持ち出し中", "現在残数", "現場内訳"],
+        aggregateRows.map((entry) => entry.cells),
+        "集計対象の選定データがありません。"
+      ),
+      "全現場の選定状況を合算した一覧です。"
+    ),
+  ];
+
+  state.selectionProjects.forEach((project) => {
+    const projectRows = Array.from(getSelectionProjectRequirementMap(project).entries())
+      .map(([equipId, qty]) => {
+        const item = getEquipment(equipId);
+        return {
+          name: buildEquipmentLabel(item),
+          cells: [
+            escapeHTML(item?.manufacturer || "-"),
+            escapeHTML(item?.name || "(不明)"),
+            escapeHTML(String(qty)),
+            escapeHTML(String(getCheckedOutQty(equipId))),
+            escapeHTML(String(getAvailable(equipId))),
+          ],
+        };
+      })
+      .sort((a, b) => compareText(a.name, b.name));
+    const projectHistory = getProjectHistoryEntries(project.name);
+    sections.push(
+      renderPrintSection(
+        `現場別リザルト: ${project.name}`,
+        `
+          ${renderPrintSummary([
+            { label: "選定種類", value: `${projectRows.length} 種類` },
+            { label: "選定合計", value: `${projectRows.reduce((sum, entry) => sum + Number(entry.cells[2]), 0)} 点` },
+            { label: "持ち出し履歴", value: `${projectHistory.length} 件` },
+            { label: "未返却", value: `${projectHistory.filter((entry) => !entry.returned).reduce((sum, entry) => sum + entry.qty, 0)} 点` },
+          ])}
+          <div class="print-subsection">
+            ${renderPrintTable(
+              ["メーカー", "機材名", "選定数", "持ち出し中", "現在残数"],
+              projectRows.map((entry) => entry.cells),
+              "この現場の選定はありません。"
+            )}
+          </div>
+        `
+      )
+    );
+  });
+
+  const activeHistory = state.history.filter((entry) => !entry.returned);
+  if (activeHistory.length > 0) {
+    sections.push(
+      renderPrintSection(
+        "持ち出し中一覧",
+        renderPrintTable(
+          ["現場", "機材", "数量", "持ち出し先", "担当", "期間", "所有割当"],
+          activeHistory.map((entry) => [
+            escapeHTML(entry.projectName || "-"),
+            escapeHTML(buildEquipmentLabel(getEquipment(entry.equipId))),
+            escapeHTML(String(entry.qty)),
+            escapeHTML(entry.destination || "-"),
+            escapeHTML(entry.person || "-"),
+            escapeHTML(formatDateRange(entry.startDate || entry.date, entry.endDate || entry.date)),
+            escapeHTML(formatAllocationSummary(entry.allocations) || "-"),
+          ])
+        )
+      )
+    );
+  }
+
+  openPrintDocument({
+    title: "全体リザルト",
+    subtitle: `保存時のファイル名目安: ${sanitizeFileName("全体リザルト")}.pdf`,
+    sections,
+  });
+}
+
 function exportAppData() {
   const stamp = new Date().toISOString().slice(0, 10);
   const payload = buildExportPayload();
@@ -3764,17 +4429,7 @@ function getFilteredEquipment() {
 }
 
 function groupHistory() {
-  const buckets = new Map();
-
-  state.history.forEach((item) => {
-    const key = `${item.projectName || ""}|${item.person}|${item.destination}|${item.startDate || item.date || ""}|${item.endDate || item.date || ""}`;
-    if (!buckets.has(key)) {
-      buckets.set(key, []);
-    }
-    buckets.get(key).push(item);
-  });
-
-  return Array.from(buckets.entries());
+  return groupHistoryEntries(state.history);
 }
 
 function getStats() {
@@ -5118,6 +5773,7 @@ function renderSelected() {
   const genreOptions = getLinkedFilterOptions("genre");
   const typeOptions = getLinkedFilterOptions("type");
   const projectTotals = getSelectionProjectTotals(project);
+  const projectHistory = project ? getProjectHistoryEntries(project.name) : [];
 
   return `
       <section class="panel">
@@ -5125,7 +5781,10 @@ function renderSelected() {
           <div>
             <h2>選定</h2>
           </div>
-        <button class="primary-button" data-action="create-selection-project">現場を追加</button>
+          <div class="section-head-actions">
+            <button class="mini-button" data-action="export-overall-result-pdf" ${(state.selectionProjects.length === 0 && state.history.length === 0) ? "disabled" : ""}>全体リザルトPDF</button>
+            <button class="primary-button" data-action="create-selection-project">現場を追加</button>
+          </div>
       </div>
 
       ${state.selectionProjects.length > 0 ? `
@@ -5161,6 +5820,8 @@ function renderSelected() {
           </div>
           <div class="selection-workspace-actions">
             <span class="selection-project-summary">${projectTotals.itemCount} 種類 / ${projectTotals.qty} 点</span>
+            <button class="ghost-button" data-action="export-selection-pdf" data-project-id="${escapeHTML(project.id)}" ${project.items.length === 0 ? "disabled" : ""}>選定表PDF</button>
+            <button class="ghost-button" data-action="export-checkout-pdf" data-project-id="${escapeHTML(project.id)}" ${projectHistory.length === 0 ? "disabled" : ""}>持ち出し表PDF</button>
             <button class="secondary-button" data-action="open-checkout-modal" ${project.items.length === 0 ? "disabled" : ""}>持ち出しを確定</button>
           </div>
         </div>
@@ -5869,6 +6530,7 @@ function renderEstimates() {
             </div>
             <div class="selection-workspace-actions">
               <span class="selection-project-summary">機材 ${projectTotals.qty} 点 / セット ${projectTotals.packQty} 件 / 追加費用 ${projectTotals.extraCount} 件</span>
+              <button class="ghost-button" data-action="export-estimate-pdf" data-project-id="${escapeHTML(project.id)}">見積PDF</button>
               <button class="secondary-button price-calc-button" data-action="open-price-calc-modal" data-project-id="${escapeHTML(project.id)}">料金計算</button>
               <button class="ghost-button" data-action="convert-estimate-to-selection" data-project-id="${escapeHTML(project.id)}">選定へ転用</button>
             </div>
@@ -6444,6 +7106,18 @@ app.addEventListener("click", (event) => {
       return;
     case "export-data":
       exportAppData();
+      return;
+    case "export-estimate-pdf":
+      exportEstimatePdf(target.dataset.projectId);
+      return;
+    case "export-selection-pdf":
+      exportSelectionPdf(target.dataset.projectId);
+      return;
+    case "export-checkout-pdf":
+      exportCheckoutPdf(target.dataset.projectId);
+      return;
+    case "export-overall-result-pdf":
+      exportOverallResultPdf();
       return;
     case "import-data":
       openImportPicker();
