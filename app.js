@@ -1469,10 +1469,16 @@ function buildPrintDocument({ title, subtitle = "", sections = [] }) {
 }
 
 function openPrintDocument({ title, subtitle = "", sections = [] }) {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
+  const printWindow = window.open("about:blank", "_blank");
+  if (!printWindow || printWindow.closed) {
     window.alert("PDF出力用の画面を開けませんでした。ポップアップを許可して再度お試しください。");
     return;
+  }
+
+  try {
+    printWindow.opener = null;
+  } catch (error) {
+    // Some browsers disallow changing opener; printing can continue.
   }
 
   printWindow.document.open();
