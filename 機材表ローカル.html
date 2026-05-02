@@ -3011,13 +3011,13 @@ function groupHistoryEntries(entries) {
   return Array.from(buckets.entries());
 }
 
-function renderPrintSummary(summaryItems) {
+function renderPrintSummary(summaryItems, compact = false) {
   if (!Array.isArray(summaryItems) || summaryItems.length === 0) {
     return "";
   }
 
   return `
-    <div class="print-summary-grid">
+    <div class="print-summary-grid${compact ? " print-summary-grid-compact" : ""}">
       ${summaryItems.map((item) => `
         <div class="print-summary-card">
           <div class="print-summary-label">${escapeHTML(item.label)}</div>
@@ -3094,10 +3094,11 @@ function buildPrintDocument({ title, subtitle = "", sections = [] }) {
         color: var(--text);
         font-family: "Avenir Next", "Hiragino Sans", "Yu Gothic", sans-serif;
         background: #f7f8fa;
+        font-size: 12px;
       }
 
       .print-shell {
-        padding: 24px;
+        padding: 18px;
       }
 
       .print-header {
@@ -3105,79 +3106,90 @@ function buildPrintDocument({ title, subtitle = "", sections = [] }) {
         justify-content: space-between;
         gap: 16px;
         align-items: flex-start;
-        padding: 20px 24px;
+        padding: 16px 18px;
         border: 1px solid var(--line);
-        border-radius: 20px;
+        border-radius: 16px;
         background: linear-gradient(180deg, #fff 0%, #f9fbfe 100%);
       }
 
       .print-header h1 {
         margin: 0;
-        font-size: 26px;
+        font-size: 21px;
       }
 
       .print-header p {
-        margin: 8px 0 0;
+        margin: 5px 0 0;
         color: var(--muted);
+        font-size: 11px;
       }
 
       .print-meta {
-        min-width: 180px;
+        min-width: 150px;
         text-align: right;
         color: var(--muted);
-        font-size: 12px;
+        font-size: 10px;
         line-height: 1.7;
       }
 
       .print-section {
-        margin-top: 18px;
-        padding: 18px 20px;
+        margin-top: 12px;
+        padding: 12px 14px;
         border: 1px solid var(--line);
-        border-radius: 18px;
+        border-radius: 14px;
         background: var(--surface);
         break-inside: avoid;
       }
 
       .print-section-head {
-        margin-bottom: 12px;
+        margin-bottom: 8px;
       }
 
       .print-section-head h2,
       .print-subsection h3 {
         margin: 0;
+        font-size: 15px;
       }
 
       .print-section-head p,
       .print-subsection p,
       .print-inline-note {
-        margin: 6px 0 0;
+        margin: 4px 0 0;
         color: var(--muted);
-        font-size: 13px;
+        font-size: 11px;
       }
 
       .print-summary-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 8px;
+      }
+
+      .print-summary-grid-compact {
+        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+        gap: 6px;
       }
 
       .print-summary-card {
-        padding: 14px 16px;
-        border-radius: 14px;
+        padding: 9px 10px;
+        border-radius: 10px;
         background: var(--accent-soft);
         border: 1px solid #d8e2f3;
       }
 
       .print-summary-label {
         color: var(--muted);
-        font-size: 12px;
+        font-size: 10px;
       }
 
       .print-summary-value {
-        margin-top: 6px;
+        margin-top: 4px;
         color: var(--accent);
-        font-size: 20px;
+        font-size: 15px;
         font-weight: 700;
+      }
+
+      .print-summary-grid-compact .print-summary-value {
+        font-size: 13px;
       }
 
       .print-table {
@@ -3187,9 +3199,9 @@ function buildPrintDocument({ title, subtitle = "", sections = [] }) {
 
       .print-table th,
       .print-table td {
-        padding: 10px 12px;
+        padding: 6px 8px;
         border: 1px solid var(--line);
-        font-size: 13px;
+        font-size: 11px;
         vertical-align: top;
         text-align: left;
       }
@@ -3205,8 +3217,8 @@ function buildPrintDocument({ title, subtitle = "", sections = [] }) {
       }
 
       .print-subsection {
-        margin-top: 14px;
-        padding-top: 14px;
+        margin-top: 10px;
+        padding-top: 10px;
         border-top: 1px dashed var(--line);
       }
 
@@ -3218,11 +3230,11 @@ function buildPrintDocument({ title, subtitle = "", sections = [] }) {
 
       .print-status {
         display: inline-block;
-        padding: 2px 10px;
+        padding: 2px 8px;
         border-radius: 999px;
         background: #eef2f7;
         color: var(--accent);
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 700;
       }
 
@@ -3314,7 +3326,7 @@ function exportEstimatePdf(projectId = state.activeEstimateProjectId) {
         { label: "追加費用", value: `${(project.extraItems || []).length} 件` },
         { label: "小計", value: formatPrice(calc.subtotal) },
         { label: "合計", value: formatPrice(calc.total) },
-      ]),
+      ], true),
       project.name
     ),
     renderPrintSection(
@@ -3496,6 +3508,56 @@ function exportCheckoutPdf(projectId = state.activeSelectionProjectId) {
     title: `持ち出し表 ${project.name}`,
     subtitle: `保存時のファイル名目安: ${sanitizeFileName(`持ち出し表_${project.name}`)}.pdf`,
     sections,
+  });
+}
+
+function exportHistoryGroupPdf(historyIdsRaw) {
+  const historyIds = String(historyIdsRaw || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const items = historyIds
+    .map((historyId) => state.history.find((entry) => entry.id === historyId))
+    .filter(Boolean);
+
+  if (items.length === 0) {
+    window.alert("出力対象の持ち出し履歴が見つかりませんでした。");
+    return;
+  }
+
+  const first = items[0];
+  const allReturned = items.every((item) => item.returned);
+  const label = first.projectName || first.destination || first.person || "履歴";
+
+  openPrintDocument({
+    title: `持ち出し表 ${label}`,
+    subtitle: `保存時のファイル名目安: ${sanitizeFileName(`持ち出し表_${label}`)}.pdf`,
+    sections: [
+      renderPrintSection(
+        "持ち出しサマリー",
+        renderPrintSummary([
+          { label: "現場名", value: first.projectName || "-" },
+          { label: "担当", value: first.person || "-" },
+          { label: "持ち出し先", value: first.destination || "-" },
+          { label: "状態", value: allReturned ? "返却済み" : "持ち出し中" },
+          { label: "期間", value: formatDateRange(first.startDate || first.date, first.endDate || first.date) },
+          { label: "合計", value: `${items.reduce((sum, item) => sum + item.qty, 0)} 点` },
+        ])
+      ),
+      renderPrintSection(
+        "持ち出し明細",
+        renderPrintTable(
+          ["機材", "数量", "所有割当", "状態", "返却日"],
+          items.map((item) => [
+            escapeHTML(buildEquipmentLabel(getEquipment(item.equipId))),
+            escapeHTML(String(item.qty)),
+            escapeHTML(formatAllocationSummary(item.allocations) || "-"),
+            escapeHTML(item.returned ? "返却済み" : "持ち出し中"),
+            escapeHTML(item.returnDate || "-"),
+          ])
+        )
+      ),
+    ],
   });
 }
 
@@ -5779,7 +5841,6 @@ function renderSelected() {
   const genreOptions = getLinkedFilterOptions("genre");
   const typeOptions = getLinkedFilterOptions("type");
   const projectTotals = getSelectionProjectTotals(project);
-  const projectHistory = project ? getProjectHistoryEntries(project.name) : [];
 
   return `
       <section class="panel">
@@ -5788,7 +5849,7 @@ function renderSelected() {
             <h2>選定</h2>
           </div>
           <div class="section-head-actions">
-            <button class="mini-button" data-action="export-overall-result-pdf" ${(state.selectionProjects.length === 0 && state.history.length === 0) ? "disabled" : ""}>全体リザルトPDF</button>
+            <button class="mini-button" data-action="export-overall-result-pdf" ${(state.selectionProjects.length === 0 && state.history.length === 0) ? "disabled" : ""}>全体リスト</button>
             <button class="primary-button" data-action="create-selection-project">現場を追加</button>
           </div>
       </div>
@@ -5827,7 +5888,6 @@ function renderSelected() {
           <div class="selection-workspace-actions">
             <span class="selection-project-summary">${projectTotals.itemCount} 種類 / ${projectTotals.qty} 点</span>
             <button class="ghost-button" data-action="export-selection-pdf" data-project-id="${escapeHTML(project.id)}" ${project.items.length === 0 ? "disabled" : ""}>選定表PDF</button>
-            <button class="ghost-button" data-action="export-checkout-pdf" data-project-id="${escapeHTML(project.id)}" ${projectHistory.length === 0 ? "disabled" : ""}>持ち出し表PDF</button>
             <button class="secondary-button" data-action="open-checkout-modal" ${project.items.length === 0 ? "disabled" : ""}>持ち出しを確定</button>
           </div>
         </div>
@@ -5990,6 +6050,12 @@ function renderHistory() {
 
   return `
     <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>履歴</h2>
+          <p>持ち出し表PDFは各履歴カードから出力できます。</p>
+        </div>
+      </div>
       <div class="history-list">
         ${groups.map(([key, items]) => {
           const [projectName, person, destination, startDate, endDate] = key.split("|");
@@ -6009,6 +6075,7 @@ function renderHistory() {
                   </div>
                   <div class="history-header-actions">
                     <span>${escapeHTML(formatDateRange(startDate, endDate))}</span>
+                    <button class="mini-button" data-action="export-history-group-pdf" data-history-ids="${escapeHTML(groupHistoryIds)}">持ち出し表PDF</button>
                     ${allReturned ? "" : `<button class="mini-button" data-action="return-history-group" data-history-ids="${escapeHTML(groupHistoryIds)}">まとめて返却</button>`}
                   </div>
                 </header>
@@ -6501,7 +6568,10 @@ function renderEstimates() {
         <div>
           <h2>見積もり</h2>
         </div>
-        <button class="primary-button" data-action="create-estimate-project">見積もりを追加</button>
+        <div class="section-head-actions">
+          <button class="primary-button" data-action="create-estimate-project">見積もりを追加</button>
+          <button class="ghost-button" data-action="convert-estimate-to-selection" data-project-id="${escapeHTML(project?.id || "")}" ${project ? "" : "disabled"}>選定に反映</button>
+        </div>
       </div>
 
       ${state.estimateProjects.length > 0 ? `
@@ -6536,9 +6606,7 @@ function renderEstimates() {
             </div>
             <div class="selection-workspace-actions">
               <span class="selection-project-summary">機材 ${projectTotals.qty} 点 / セット ${projectTotals.packQty} 件 / 追加費用 ${projectTotals.extraCount} 件</span>
-              <button class="ghost-button" data-action="export-estimate-pdf" data-project-id="${escapeHTML(project.id)}">見積PDF</button>
               <button class="secondary-button price-calc-button" data-action="open-price-calc-modal" data-project-id="${escapeHTML(project.id)}">料金計算</button>
-              <button class="ghost-button" data-action="convert-estimate-to-selection" data-project-id="${escapeHTML(project.id)}">選定へ転用</button>
             </div>
           </div>
 
@@ -6965,6 +7033,7 @@ function renderPriceCalcModal() {
         </div>
 
         <div class="modal-actions">
+          <button class="ghost-button" data-action="export-estimate-pdf" data-project-id="${escapeHTML(project.id)}">見積PDF</button>
           <button class="ghost-button" data-action="close-price-calc-modal">閉じる</button>
         </div>
       </div>
@@ -7121,6 +7190,9 @@ app.addEventListener("click", (event) => {
       return;
     case "export-checkout-pdf":
       exportCheckoutPdf(target.dataset.projectId);
+      return;
+    case "export-history-group-pdf":
+      exportHistoryGroupPdf(target.dataset.historyIds);
       return;
     case "export-overall-result-pdf":
       exportOverallResultPdf();
