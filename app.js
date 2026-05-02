@@ -1128,6 +1128,34 @@ function buildExportPayload() {
   };
 }
 
+function buildLocalMasterMeta() {
+  return {
+    version: 1,
+    id: `local-master-${Date.now()}`,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+function buildLocalMasterHtml(templateHtml, snapshot, meta) {
+  const serializedMeta = JSON.stringify(meta, null, 2).replaceAll("</script>", "<\\/script>");
+  const serializedSnapshot = JSON.stringify(snapshot, null, 2).replaceAll("</script>", "<\\/script>");
+
+  const withMeta = templateHtml.replace(
+    /\/\* LOCAL_MASTER_META \*\/\s*window\.__LOCAL_MASTER_META__ = [\s\S]*?;/,
+    `/* LOCAL_MASTER_META */\nwindow.__LOCAL_MASTER_META__ = ${serializedMeta};`
+  );
+  const withSnapshot = withMeta.replace(
+    /\/\* LOCAL_MASTER_STATE \*\/\s*window\.__LOCAL_MASTER_STATE__ = [\s\S]*?;/,
+    `/* LOCAL_MASTER_STATE */\nwindow.__LOCAL_MASTER_STATE__ = ${serializedSnapshot};`
+  );
+
+  if (withSnapshot === templateHtml) {
+    throw new Error("Local master markers not found");
+  }
+
+  return withSnapshot;
+}
+
 function downloadTextFile(filename, content, mimeType) {
   const blob = new Blob([content], { type: mimeType });
   const objectUrl = URL.createObjectURL(blob);
@@ -1877,6 +1905,24 @@ function exportAppData() {
   const stamp = new Date().toISOString().slice(0, 10);
   const payload = buildExportPayload();
   downloadTextFile(`equipment-export-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json");
+}
+
+async function exportLocalMaster() {
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  try {
+    const templateUrl = new URL("./機材表ローカル.html", window.location.href);
+    const response = await fetch(templateUrl.toString(), { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Template load failed");
+    }
+
+    const templateHtml = await response.text();
+    const masterHtml = buildLocalMasterHtml(templateHtml, buildExportPayload(), buildLocalMasterMeta());
+    downloadTextFile(`機材表ローカルMaster-${stamp}.html`, masterHtml, "text/html;charset=utf-8");
+  } catch (error) {
+    window.alert("ローカル版Masterの生成に失敗しました。機材表ローカル.html を配置した状態で再度お試しください。");
+  }
 }
 
 function parseImportedData(rawText) {
@@ -5246,6 +5292,7 @@ function render() {
       </div>
       <div class="hero-actions">
         <div class="hero-corner-actions">
+          <button class="mini-button" data-action="export-local-master">ローカル版Master</button>
           <button class="mini-button" data-action="export-data">書き出し</button>
           <button class="mini-button" data-action="import-data">読み込み</button>
         </div>
@@ -5370,6 +5417,9 @@ app.addEventListener("click", (event) => {
       return;
     case "export-data":
       exportAppData();
+      return;
+    case "export-local-master":
+      exportLocalMaster();
       return;
     case "export-estimate-pdf":
       exportEstimatePdf(target.dataset.projectId);
