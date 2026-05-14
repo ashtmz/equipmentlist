@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   packs: "equipment-manager-packs",
   estimateProjects: "equipment-manager-estimate-projects",
   extraFeeTemplates: "equipment-manager-extra-fee-templates",
+  appSettings: "equipment-manager-app-settings",
 };
 
 const LEGACY_SAMPLE_EQUIPMENT = [
@@ -36,6 +37,23 @@ function loadJSON(key, fallback) {
 function toPositiveInt(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function createAppSettings(seed = {}) {
+  const pageTitle = String(seed?.pageTitle ?? APP_CONFIG.pageTitle ?? "機材管理ボード").trim();
+  return {
+    pageTitle: pageTitle || "機材管理ボード",
+    estimatePageSettings: createEstimateExportSettings(seed?.estimatePageSettings || {}),
+  };
+}
+
+function createEstimateExportSettings(seed = {}) {
+  return {
+    showCostPrice: Boolean(seed?.showCostPrice),
+    showStock: Boolean(seed?.showStock),
+    ignoreStockLimit: Boolean(seed?.showStock) ? false : Boolean(seed?.ignoreStockLimit),
+    showAdjustments: Boolean(seed?.showAdjustments),
+  };
 }
 
 const APP_CONFIG = window.APP_CONFIG ?? {};
@@ -104,6 +122,8 @@ function normalizeEquipment(item, index) {
     stock,
     price: toPositiveInt(item?.price, 0),
     notes: String(item?.notes ?? "").trim(),
+    isNetPrice: Boolean(item?.isNetPrice),
+    priceLower: toPositiveInt(item?.priceLower, 0),
     imageUrl: String(item?.imageUrl ?? "").trim(),
     imageFileData: String(item?.imageFileData ?? "").trim(),
     imageFileName: String(item?.imageFileName ?? "").trim(),
@@ -627,6 +647,8 @@ function createAddForm(seed = {}) {
     stock: seed.stock ?? (ownershipTotal || 1),
     price: seed.price ?? 0,
     notes: seed.notes ?? "",
+    isNetPrice: seed.isNetPrice ?? false,
+    priceLower: seed.priceLower ?? 0,
     imageUrl: seed.imageUrl ?? "",
     imageFileData: seed.imageFileData ?? "",
     imageFileName: seed.imageFileName ?? "",
@@ -679,6 +701,7 @@ function loadCachedSharedState() {
   const estimateProjects = normalizeEstimateProjects(loadJSON(STORAGE_KEYS.estimateProjects, []), equipment, packs, extraFeeTemplates);
   const selectionProjects = normalizeSelectionProjects(loadJSON(STORAGE_KEYS.selectionProjects, []), equipment, packs);
   const dependencyRules = normalizeDependencyRules(loadJSON(STORAGE_KEYS.dependencyRules, []), equipment);
+  const appSettings = createAppSettings(loadJSON(STORAGE_KEYS.appSettings, {}));
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
 
   const initialSnapshot = {
@@ -689,6 +712,7 @@ function loadCachedSharedState() {
     estimateProjects,
     selectionProjects,
     dependencyRules,
+    appSettings,
     nextId: Math.max(toPositiveInt(loadJSON(STORAGE_KEYS.nextId, maxId + 1), maxId + 1), maxId + 1),
   };
 
@@ -726,6 +750,7 @@ const state = {
   estimateProjects: cachedSharedState.estimateProjects,
   selectionProjects: cachedSharedState.selectionProjects,
   dependencyRules: cachedSharedState.dependencyRules,
+  appSettings: cachedSharedState.appSettings,
   activeEstimateProjectId: cachedSharedState.estimateProjects[0]?.id ?? null,
   activeSelectionProjectId: cachedSharedState.selectionProjects[0]?.id ?? null,
   showAddModal: false,
@@ -740,6 +765,7 @@ const state = {
   },
   showCheckoutModal: false,
   showPriceCalcModal: false,
+  estimateExportModal: null,
   showProjectModal: false,
   projectModalType: "",
   projectModalName: "",
@@ -788,6 +814,7 @@ function writeLocalCache() {
   localStorage.setItem(STORAGE_KEYS.estimateProjects, JSON.stringify(state.estimateProjects));
   localStorage.setItem(STORAGE_KEYS.selectionProjects, JSON.stringify(state.selectionProjects));
   localStorage.setItem(STORAGE_KEYS.dependencyRules, JSON.stringify(state.dependencyRules));
+  localStorage.setItem(STORAGE_KEYS.appSettings, JSON.stringify(state.appSettings));
 }
 
 function serializeSharedState() {
@@ -800,6 +827,7 @@ function serializeSharedState() {
     estimateProjects: state.estimateProjects,
     selectionProjects: state.selectionProjects,
     dependencyRules: state.dependencyRules,
+    appSettings: state.appSettings,
     _meta: {
       clientRevision: state.sync.localRevision || "",
       savedAt: new Date().toISOString(),
@@ -818,6 +846,7 @@ function applySharedState(rawState) {
   const hasEstimateProjects = Object.prototype.hasOwnProperty.call(rawState || {}, "estimateProjects");
   const hasSelectionProjects = Object.prototype.hasOwnProperty.call(rawState || {}, "selectionProjects");
   const hasDependencyRules = Object.prototype.hasOwnProperty.call(rawState || {}, "dependencyRules");
+  const hasAppSettings = Object.prototype.hasOwnProperty.call(rawState || {}, "appSettings");
   const packs = hasPacks
     ? normalizePackCatalog(rawState?.packs, equipment)
     : normalizePackCatalog(state.packs, equipment);
@@ -834,6 +863,9 @@ function applySharedState(rawState) {
   const dependencyRules = hasDependencyRules
     ? normalizeDependencyRules(rawState?.dependencyRules, equipment)
     : normalizeDependencyRules(state.dependencyRules, equipment);
+  const appSettings = hasAppSettings
+    ? createAppSettings(rawState?.appSettings)
+    : createAppSettings(state.appSettings);
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
   const nextSnapshot = stripLegacySampleState({
     equipment,
@@ -843,6 +875,7 @@ function applySharedState(rawState) {
     estimateProjects,
     selectionProjects,
     dependencyRules,
+    appSettings,
     nextId: Math.max(toPositiveInt(rawState?.nextId, maxId + 1), maxId + 1),
   });
 
@@ -854,6 +887,7 @@ function applySharedState(rawState) {
   state.estimateProjects = nextSnapshot.snapshot.estimateProjects;
   state.selectionProjects = nextSnapshot.snapshot.selectionProjects;
   state.dependencyRules = nextSnapshot.snapshot.dependencyRules;
+  state.appSettings = appSettings;
 
   if (!getEstimateProject(state.activeEstimateProjectId)) {
     state.activeEstimateProjectId = estimateProjects[0]?.id ?? null;
@@ -879,7 +913,7 @@ function applySharedState(rawState) {
 }
 
 function canApplyRemoteStateImmediately() {
-  return !state.showAddModal && !state.showPackModal && !state.showExtraFeeModal && !state.showCheckoutModal && !state.returnModal && !state.showPriceCalcModal;
+  return !state.showAddModal && !state.showPackModal && !state.showExtraFeeModal && !state.showCheckoutModal && !state.returnModal && !state.showPriceCalcModal && !state.estimateExportModal;
 }
 
 function buildJSONPUrl(params = {}) {
@@ -1113,7 +1147,8 @@ function persistState(options = {}) {
   }
 }
 
-function buildExportPayload() {
+function buildExportPayload(settingsOverride = null) {
+  const estimatePageSettings = createEstimateExportSettings(settingsOverride || state.appSettings?.estimatePageSettings || {});
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
@@ -1125,6 +1160,10 @@ function buildExportPayload() {
     estimateProjects: state.estimateProjects,
     selectionProjects: state.selectionProjects,
     dependencyRules: state.dependencyRules,
+    appSettings: {
+      ...state.appSettings,
+      estimatePageSettings,
+    },
   };
 }
 
@@ -1156,16 +1195,171 @@ function buildLocalMasterHtml(templateHtml, snapshot, meta) {
   return withSnapshot;
 }
 
+function buildLocalMasterSnapshot(settings = {}) {
+  const pageTitle = String(settings.pageTitle || "").trim();
+  return {
+    ...buildExportPayload(),
+    appSettings: {
+      ...state.appSettings,
+      pageTitle: pageTitle || state.appSettings.pageTitle,
+    },
+  };
+}
+
+function buildClientEstimatePageHtml(templateHtml, payload) {
+  const serializedPayload = JSON.stringify(payload, null, 2).replaceAll("</script>", "<\\/script>");
+  const withPayload = templateHtml.replace(
+    /window\.__CLIENT_ESTIMATE_PAYLOAD__ = [\s\S]*?;/,
+    `window.__CLIENT_ESTIMATE_PAYLOAD__ = ${serializedPayload};`
+  );
+
+  if (withPayload === templateHtml) {
+    throw new Error("Client estimate payload marker not found");
+  }
+
+  return withPayload;
+}
+
+function buildClientEstimateSnapshot(projectId, settings) {
+  const project = getEstimateProject(projectId);
+  if (!project) {
+    return null;
+  }
+
+  const packIds = new Set((project.packItems || []).map((entry) => String(entry.packId)).filter(Boolean));
+  const equipIds = new Set((project.items || []).map((entry) => Number(entry.equipId)).filter((id) => id > 0));
+
+  state.packs.forEach((pack) => {
+    if (!packIds.has(String(pack.id))) {
+      return;
+    }
+
+    (pack.items || []).forEach((entry) => {
+      const equipId = Number(entry.equipId);
+      if (equipId > 0) {
+        equipIds.add(equipId);
+      }
+    });
+  });
+
+  const equipment = state.equipment
+    .filter((item) => equipIds.has(Number(item.id)))
+    .map((item) => ({
+      id: item.id,
+      manufacturer: item.manufacturer,
+      name: item.name,
+      genres: item.genres,
+      genre: item.genre,
+      types: item.types,
+      stock: settings.showStock ? item.stock : 0,
+      price: item.price,
+      isNetPrice: settings.showCostPrice ? item.isNetPrice : false,
+      priceLower: settings.showCostPrice ? item.priceLower : 0,
+    }));
+
+  const packs = state.packs
+    .filter((pack) => packIds.has(String(pack.id)))
+    .map((pack) => ({
+      id: pack.id,
+      name: pack.name,
+      price: pack.price,
+      items: (pack.items || [])
+        .filter((entry) => equipIds.has(Number(entry.equipId)))
+        .map((entry) => ({
+          id: entry.id,
+          equipId: entry.equipId,
+          qty: entry.qty,
+        })),
+    }));
+
+  const estimateProjects = [{
+    id: project.id,
+    name: project.name,
+    items: (project.items || []).map((entry) => ({
+      id: entry.id,
+      equipId: entry.equipId,
+      qty: entry.qty,
+    })),
+    packItems: (project.packItems || []).map((entry) => ({
+      id: entry.id,
+      packId: entry.packId,
+      qty: entry.qty,
+    })),
+    extraItems: (project.extraItems || []).map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      category: entry.category,
+      unitPrice: entry.unitPrice,
+      qty: entry.qty,
+    })),
+  }];
+
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    equipment,
+    packs,
+    extraFeeTemplates: [],
+    history: [],
+    nextId: state.nextId,
+    estimateProjects,
+    selectionProjects: [],
+    dependencyRules: [],
+    appSettings: {
+      pageTitle: state.appSettings.pageTitle,
+    },
+  };
+}
+
 function downloadTextFile(filename, content, mimeType) {
   const blob = new Blob([content], { type: mimeType });
+  if (typeof window.showSaveFilePicker === "function") {
+    const acceptMimeType = String(mimeType || "application/octet-stream").split(";")[0] || "application/octet-stream";
+    const extensionMatch = String(filename || "").match(/(\.[^.]+)$/);
+    const extension = extensionMatch ? extensionMatch[1] : ".txt";
+
+    try {
+      const pickerResult = window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: acceptMimeType,
+          accept: {
+            [acceptMimeType]: [extension],
+          },
+        }],
+      });
+
+      if (pickerResult && typeof pickerResult.then === "function") {
+        void pickerResult.then(async (handle) => {
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        }).catch((error) => {
+          if (error?.name !== "AbortError") {
+            console.error(error);
+          }
+        });
+        return;
+      }
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error(error);
+      }
+    }
+  }
+
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
   link.download = filename;
+  link.rel = "noopener";
+  link.style.display = "none";
   document.body.appendChild(link);
   link.click();
-  link.remove();
-  URL.revokeObjectURL(objectUrl);
+  window.setTimeout(() => {
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }, 60_000);
 }
 
 function sanitizeFileName(value) {
@@ -1902,27 +2096,39 @@ function exportOverallResultPdf() {
 }
 
 function exportAppData() {
+  state.estimateExportModal = {
+    settings: createEstimateExportSettings(state.appSettings?.estimatePageSettings || {}),
+  };
+  render();
+}
+
+function downloadExportDataJson(settingsOverride = null) {
   const stamp = new Date().toISOString().slice(0, 10);
-  const payload = buildExportPayload();
+  const payload = buildExportPayload(settingsOverride);
   downloadTextFile(`equipment-export-${stamp}.json`, JSON.stringify(payload, null, 2), "application/json");
 }
 
-async function exportLocalMaster() {
-  const stamp = new Date().toISOString().slice(0, 10);
+function closeEstimateExportModal() {
+  state.estimateExportModal = null;
+  render();
+  refreshRemoteStateIfPending();
+}
 
-  try {
-    const templateUrl = new URL("./機材表ローカル.html", window.location.href);
-    const response = await fetch(templateUrl.toString(), { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error("Template load failed");
-    }
-
-    const templateHtml = await response.text();
-    const masterHtml = buildLocalMasterHtml(templateHtml, buildExportPayload(), buildLocalMasterMeta());
-    downloadTextFile(`機材表ローカルMaster-${stamp}.html`, masterHtml, "text/html;charset=utf-8");
-  } catch (error) {
-    window.alert("ローカル版Masterの生成に失敗しました。機材表ローカル.html を配置した状態で再度お試しください。");
+function syncEstimateExportSettingsFromDOM() {
+  const root = document.querySelector("[data-estimate-export-form]");
+  if (!root || !state.estimateExportModal) {
+    return;
   }
+
+  const showStock = root.querySelector("#estimate-export-show-stock")?.checked ?? false;
+  state.estimateExportModal.settings = createEstimateExportSettings({
+    showCostPrice: root.querySelector("#estimate-export-show-cost-price")?.checked,
+    showStock,
+    ignoreStockLimit: showStock
+      ? false
+      : root.querySelector("#estimate-export-ignore-stock-limit")?.checked,
+    showAdjustments: root.querySelector("#estimate-export-show-adjustments")?.checked,
+  });
 }
 
 function parseImportedData(rawText) {
@@ -1957,6 +2163,7 @@ function parseImportedData(rawText) {
   const estimateProjects = normalizeEstimateProjects(parsed.estimateProjects, equipment, packs, extraFeeTemplates);
   const selectionProjects = normalizeSelectionProjects(parsed.selectionProjects, equipment, packs);
   const dependencyRules = normalizeDependencyRules(parsed.dependencyRules, equipment);
+  const appSettings = createAppSettings(parsed.appSettings);
   const maxId = equipment.reduce((max, item) => Math.max(max, toPositiveInt(item.id, 0)), 0);
 
   return {
@@ -1968,6 +2175,7 @@ function parseImportedData(rawText) {
     estimateProjects,
     selectionProjects,
     dependencyRules,
+    appSettings,
   };
 }
 
@@ -1991,6 +2199,7 @@ async function importAppData(file) {
     state.estimateProjects = imported.estimateProjects || [];
     state.selectionProjects = imported.selectionProjects;
     state.dependencyRules = imported.dependencyRules || [];
+    state.appSettings = imported.appSettings || createAppSettings();
     state.activeEstimateProjectId = imported.estimateProjects?.[0]?.id ?? null;
     state.activeSelectionProjectId = imported.selectionProjects[0]?.id ?? null;
     state.searchText = "";
@@ -3330,6 +3539,8 @@ function openEditModal(equipId) {
     types: item.types,
     stock: item.stock,
     price: item.price,
+    isNetPrice: item.isNetPrice,
+    priceLower: item.priceLower,
     notes: item.notes,
     imageUrl: item.imageUrl,
     imageFileData: item.imageFileData,
@@ -3497,6 +3708,7 @@ function syncAddFormFromDOM() {
     return;
   }
 
+  const isNetPrice = root.querySelector("#add-net-price")?.checked ?? false;
   const ownerships = Array.from(root.querySelectorAll("[data-add-ownership-row]"))
     .map((row) => ({
       id: row.dataset.rowId,
@@ -3513,6 +3725,8 @@ function syncAddFormFromDOM() {
     typeDraft: root.querySelector("#add-type")?.value.trim() ?? "",
     stock: root.querySelector("#add-stock")?.value ?? 0,
     price: toPositiveInt(root.querySelector("#add-price")?.value, 0),
+    isNetPrice,
+    priceLower: toPositiveInt(root.querySelector("#add-price-lower")?.value, state.addForm.priceLower ?? 0),
     notes: root.querySelector("#add-notes")?.value ?? "",
     imageUrl: root.querySelector("#add-image-url")?.value.trim() ?? state.addForm.imageUrl ?? "",
     imageFileData: state.addForm.imageFileData ?? "",
@@ -3752,6 +3966,8 @@ function saveEquipmentFromForm() {
     types: [...new Set((state.addForm.types || []).map((entry) => String(entry).trim()).filter(Boolean))],
     stock,
     price: toPositiveInt(state.addForm.price, 0),
+    isNetPrice: Boolean(state.addForm.isNetPrice),
+    priceLower: Boolean(state.addForm.isNetPrice) ? toPositiveInt(state.addForm.priceLower, 0) : 0,
     notes: state.addForm.notes.trim(),
     imageUrl: state.addForm.imageUrl.trim(),
     imageFileData: state.addForm.imageFileData,
@@ -4022,10 +4238,10 @@ function renderList() {
                     <span class="info-label">所有</span>
                     <div class="ownership-list">${ownershipBadges(item.ownerships)}</div>
                   </div>
-                  ${item.price > 0 ? `
+                  ${(item.price > 0 || (item.isNetPrice && item.priceLower > 0)) ? `
                   <div class="info-group inventory-price">
-                    <span class="info-label">単価</span>
-                    <span class="price-value">${escapeHTML(formatPrice(item.price))}</span>
+                    <span class="info-label">${item.isNetPrice ? "上代 / 下代" : "価格"}</span>
+                    <p class="note-text">${escapeHTML(formatPrice(item.price))}${item.isNetPrice ? ` / ${escapeHTML(formatPrice(item.priceLower))}` : ""}</p>
                   </div>
                   ` : ""}
                   <div class="info-group inventory-note">
@@ -4380,9 +4596,24 @@ function renderAddModal() {
               <input id="add-stock" class="number-input" type="number" min="0" value="${stock}" />
             </div>
             <div class="field">
-              <label for="add-price">単価（税込）</label>
+              <label class="checkbox-label" for="add-net-price">
+                <input id="add-net-price" type="checkbox" ${state.addForm.isNetPrice ? "checked" : ""} />
+                <span>NET</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="add-price">${state.addForm.isNetPrice ? "上代" : "価格"}</label>
               <input id="add-price" class="number-input" type="number" min="0" value="${toPositiveInt(state.addForm.price, 0)}" placeholder="0" />
             </div>
+            ${state.addForm.isNetPrice ? `
+              <div class="field">
+                <label for="add-price-lower">下代</label>
+                <input id="add-price-lower" class="number-input" type="number" min="0" value="${toPositiveInt(state.addForm.priceLower, 0)}" placeholder="0" />
+              </div>
+            ` : ""}
           </div>
 
           <div class="ownership-editor">
@@ -5033,8 +5264,9 @@ function renderEstimates() {
                           <span class="inventory-stock-total">/ ${item.stock}</span>
                         </div>
                         <div class="inline-info">
-                          <span class="info-label">単価</span>
+                          <span class="info-label">${item.isNetPrice ? "上代" : "価格"}</span>
                           <span class="price-value">${escapeHTML(formatPrice(item.price))}</span>
+                          ${item.isNetPrice ? `<span class="sub-note">下代 ${escapeHTML(formatPrice(item.priceLower))}</span>` : ""}
                         </div>
                         <div class="inline-info">
                           <span class="info-label">見積数</span>
@@ -5276,6 +5508,73 @@ function renderPriceCalcModal() {
   `;
 }
 
+function renderEstimateExportModal() {
+  if (!state.estimateExportModal) {
+    return "";
+  }
+
+  const settings = state.estimateExportModal.settings;
+  return `
+    <div class="modal open">
+      <div class="modal-backdrop" data-action="close-estimate-export-modal"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="estimate-export-modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="estimate-export-modal-title">書き出し設定</h2>
+          </div>
+          <button class="modal-close" data-action="close-estimate-export-modal" aria-label="閉じる">×</button>
+        </div>
+
+        <div data-estimate-export-form>
+          <div class="ownership-editor">
+            <div class="form-grid">
+              <label class="field field-checkbox"><input id="estimate-export-show-cost-price" type="checkbox" ${settings.showCostPrice ? "checked" : ""} /> 仕入れ値（下代）も表示する</label>
+              <label class="field field-checkbox"><input id="estimate-export-show-stock" type="checkbox" ${settings.showStock ? "checked" : ""} /> 在庫数を表示する</label>
+              <label class="field field-checkbox"><input id="estimate-export-ignore-stock-limit" type="checkbox" ${settings.ignoreStockLimit ? "checked" : ""} ${settings.showStock ? "disabled" : ""} /> 数量追加で在庫上限を無視する</label>
+              <label class="field field-checkbox"><input id="estimate-export-show-adjustments" type="checkbox" ${settings.showAdjustments ? "checked" : ""} /> 割引・割増設定を表示する</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="ghost-button" data-action="close-estimate-export-modal">キャンセル</button>
+          <button class="primary-button" data-action="confirm-estimate-export">JSONを書き出す</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function applyPageTitle() {
+  const title = state.appSettings?.pageTitle || "機材管理ボード";
+  document.title = title;
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) {
+    ogTitle.setAttribute("content", title);
+  }
+}
+
+function editPageTitle() {
+  const currentTitle = state.appSettings?.pageTitle || "機材管理ボード";
+  const nextTitle = window.prompt("ページタイトルを入力してください。", currentTitle);
+  if (nextTitle === null) {
+    return;
+  }
+
+  const trimmedTitle = String(nextTitle).trim();
+  if (!trimmedTitle) {
+    window.alert("ページタイトルを空欄にはできません。");
+    return;
+  }
+
+  state.appSettings = createAppSettings({
+    ...state.appSettings,
+    pageTitle: trimmedTitle,
+  });
+  persistState();
+  render();
+}
+
 function render() {
   const activeCheckoutCount = state.history
     .filter((item) => !item.returned)
@@ -5286,13 +5585,13 @@ function render() {
     <header class="hero">
       <div class="hero-title-wrap">
         <div>
-          <h1>機材管理ボード</h1>
+          <h1>${escapeHTML(state.appSettings.pageTitle)}</h1>
           <p class="sync-status ${getSyncStatusClass()}">${escapeHTML(getSyncStatusLabel())}</p>
         </div>
       </div>
       <div class="hero-actions">
         <div class="hero-corner-actions">
-          <button class="mini-button" data-action="export-local-master">ローカル版Master</button>
+          <button class="mini-button" data-action="edit-page-title">タイトル設定</button>
           <button class="mini-button" data-action="export-data">書き出し</button>
           <button class="mini-button" data-action="import-data">読み込み</button>
         </div>
@@ -5338,9 +5637,12 @@ function render() {
     ${renderReturnModal()}
     ${renderMediaViewer()}
     ${renderPriceCalcModal()}
+    ${renderEstimateExportModal()}
   `;
 
-  const hasOpenModal = state.showAddModal || state.showPackModal || state.showExtraFeeModal || state.showCheckoutModal || state.showProjectModal || Boolean(state.returnModal) || Boolean(state.mediaViewer) || state.showPriceCalcModal;
+  applyPageTitle();
+
+  const hasOpenModal = state.showAddModal || state.showPackModal || state.showExtraFeeModal || state.showCheckoutModal || state.showProjectModal || Boolean(state.returnModal) || Boolean(state.mediaViewer) || state.showPriceCalcModal || Boolean(state.estimateExportModal);
   document.documentElement.classList.toggle("modal-open", hasOpenModal);
   document.body.classList.toggle("modal-open", hasOpenModal);
 
@@ -5409,20 +5711,33 @@ app.addEventListener("click", (event) => {
       closeProjectModal();
       refreshRemoteStateIfPending();
       return;
+    case "close-estimate-export-modal":
+      closeEstimateExportModal();
+      return;
     case "toggle-estimate-section":
       if (target.dataset.section && Object.prototype.hasOwnProperty.call(state.estimateSectionOpen, target.dataset.section)) {
         state.estimateSectionOpen[target.dataset.section] = !state.estimateSectionOpen[target.dataset.section];
         render();
       }
       return;
+    case "edit-page-title":
+      editPageTitle();
+      return;
     case "export-data":
       exportAppData();
       return;
-    case "export-local-master":
-      exportLocalMaster();
-      return;
     case "export-estimate-pdf":
       exportEstimatePdf(target.dataset.projectId);
+      return;
+    case "confirm-estimate-export":
+      syncEstimateExportSettingsFromDOM();
+      state.appSettings = createAppSettings({
+        ...state.appSettings,
+        estimatePageSettings: state.estimateExportModal?.settings,
+      });
+      persistState();
+      downloadExportDataJson(state.estimateExportModal?.settings);
+      closeEstimateExportModal();
       return;
     case "export-selection-pdf":
       exportSelectionPdf(target.dataset.projectId);
@@ -5669,7 +5984,9 @@ app.addEventListener("input", (event) => {
   if (event.target.matches("[data-adj-type]") || event.target.matches("[data-adj-value]") || event.target.matches("[data-adj-label]")) {
     syncPriceAdjustmentsFromDOM();
     render();
+    return;
   }
+
 });
 
 app.addEventListener("keydown", (event) => {
@@ -5690,6 +6007,18 @@ app.addEventListener("keydown", (event) => {
 });
 
 app.addEventListener("change", (event) => {
+  if (event.target.id === "add-net-price") {
+    syncAddFormFromDOM();
+    render();
+    return;
+  }
+
+  if (event.target.id === "estimate-export-show-cost-price" || event.target.id === "estimate-export-show-stock" || event.target.id === "estimate-export-ignore-stock-limit" || event.target.id === "estimate-export-show-adjustments") {
+    syncEstimateExportSettingsFromDOM();
+    render();
+    return;
+  }
+
   if (event.target.id === "add-image-file" && event.target.files?.[0]) {
     syncAddFormFromDOM();
     const file = event.target.files[0];
